@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{% if asset.pk %}Edit asset{% else %}Add asset{% endif %} · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+{% if asset.pk %}{% url 'resources:asset' asset.pk as back %}{% else %}{% url 'resources:assets' as back %}{% endif %}
+{% include "partials/_page_header.html" with title=asset.pk|yesno:"Edit asset,Add asset" back_url=back back_label="Back" %}
+<form method="post" class="card max-w-2xl space-y-4 p-6" novalidate>
+  {% csrf_token %}
+  {% include "partials/_form_errors.html" %}
+  <div class="grid gap-4 sm:grid-cols-3">{% include "partials/_field.html" with field=form.asset_tag %}<div class="sm:col-span-2">{% include "partials/_field.html" with field=form.name %}</div></div>
+  <div class="grid gap-4 sm:grid-cols-2">{% include "partials/_field.html" with field=form.asset_type %}{% include "partials/_field.html" with field=form.location %}</div>
+  {% include "partials/_field.html" with field=form.description %}
+  <div class="grid gap-4 sm:grid-cols-3">{% include "partials/_field.html" with field=form.condition_status %}{% include "partials/_field.html" with field=form.availability_status %}{% include "partials/_field.html" with field=form.custodian_user %}</div>
+  <div class="grid gap-4 sm:grid-cols-2">{% include "partials/_field.html" with field=form.acquired_on %}{% include "partials/_field.html" with field=form.replacement_cost %}</div>
+  <div class="flex flex-wrap gap-3"><button class="btn btn-primary">Save</button><a href="{{ back }}" class="btn btn-secondary">Cancel</a></div>
+</form>
+{% endblock %}

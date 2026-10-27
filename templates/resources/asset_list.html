@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}Resources · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div><h1 class="text-2xl font-semibold">Resources</h1><p class="mt-1 text-sm text-slate-600">Equipment, facilities and venues you can book.</p></div>
+  <div class="flex gap-2"><a href="{% url 'resources:my_bookings' %}" class="btn btn-secondary">My bookings</a>{% if can_manage %}<a href="{% url 'resources:bookings' %}" class="btn btn-secondary">Booking queue</a><a href="{% url 'resources:asset_create' %}" class="btn btn-primary">Add asset</a>{% endif %}</div>
+</div>
+<form method="get" class="mb-4 flex flex-wrap items-end gap-3">
+  <div class="min-w-48 flex-1"><label for="q" class="field-label">Search</label><input id="q" name="q" value="{{ filters.q }}" class="field-input" placeholder="Name, tag or location"></div>
+  <div><label for="type" class="field-label">Type</label><select id="type" name="type" class="field-input"><option value="">All</option>{% for v, l in types %}<option value="{{ v }}" {% if filters.type == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <button class="btn btn-secondary">Filter</button>
+</form>
+<div class="card overflow-x-auto">
+  <table class="table-base">
+    <thead><tr><th>Asset</th><th>Type</th><th>Location</th><th>Condition</th><th>Availability</th></tr></thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for a in page %}
+      <tr class="hover:bg-slate-50">
+        <td><a href="{% url 'resources:asset' a.pk %}" class="font-medium text-brand-700 hover:underline">{{ a.name }}</a><p class="text-xs text-slate-500">{{ a.asset_tag }}</p></td>
+        <td>{{ a.get_asset_type_display }}</td><td class="max-w-56 truncate">{{ a.location|default:"—" }}</td>
+        <td>{% status_badge a.condition_status a.get_condition_status_display %}</td><td>{% status_badge a.availability_status a.get_availability_status_display %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="5" class="py-10 text-center text-slate-500">No resources yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% include "partials/_pagination.html" %}
+</div>
+{% endblock %}

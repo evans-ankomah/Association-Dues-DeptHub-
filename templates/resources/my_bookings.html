@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}My bookings · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <h1 class="text-2xl font-semibold">My bookings</h1>
+  <a href="{% url 'resources:assets' %}" class="btn btn-primary">Book something</a>
+</div>
+<div class="card overflow-x-auto">
+  <table class="table-base">
+    <thead><tr><th>Resource</th><th>When</th><th>Status</th></tr></thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for b in page %}<tr class="hover:bg-slate-50"><td><a href="{% url 'resources:booking' b.pk %}" class="font-medium text-brand-700 hover:underline">{{ b.asset.name }}</a></td><td>{{ b.starts_at|date:"D j M, H:i" }} – {{ b.ends_at|date:"j M, H:i" }}</td><td>{% status_badge b.booking_status b.get_booking_status_display %}</td></tr>
+      {% empty %}<tr><td colspan="3" class="py-10 text-center text-slate-500">No bookings yet.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% include "partials/_pagination.html" %}
+</div>
+{% endblock %}
