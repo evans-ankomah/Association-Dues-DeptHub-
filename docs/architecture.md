@@ -30,7 +30,7 @@ Browser ──HTTP──> Django (gunicorn)
 | `workspace` | Committees and their members, meetings with minutes, tasks linked to committees, events and meetings, handover notes |
 | `documents` | Document metadata, private file storage, versions, review, visibility and audited downloads |
 | `resources` | Assets (equipment, facilities, venues), condition and availability, bookings with overlap protection |
-| `reporting` | Dashboards, finance report, exports |
+| `reporting` | Dashboards, finance report, operations report, exports |
 | `api` | REST API v1 and OpenAPI schema |
 
 Views and API endpoints are thin. Business rules live in `apps/*/services*.py`, and those services:
@@ -96,6 +96,10 @@ Views and API endpoints are thin. Business rules live in `apps/*/services*.py`, 
 - Assets under maintenance or retired can't be booked. Taking an asset out of service needs upcoming approved bookings cleared first. Returning an asset as *needs repair* puts it into maintenance.
 - Members see when an asset is busy, but not who booked it or why.
 - Utilisation: booked hours (approved, checked out, returned) clipped to the reporting window ÷ hours in the window.
+
+## Operations report
+
+`/reports/operations/` (and an Excel/CSV export, audited) shows, for a date range: events and attendance, member participation by level, service-request volume and resolution time, tasks due/overdue/done on time per committee, and resource use. Each section appears only for roles that manage that area (`events.manage`, `requests.manage`, `committees.manage`, `assets.manage`) or hold `audit.view`. Everything is aggregate, with no names or request text. Restricted service requests are counted only for their handlers; auditors see department-level requests only. Definitions are noted under each table and come from the services that own the data.
 
 ## Background jobs
 
