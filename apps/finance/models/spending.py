@@ -67,8 +67,9 @@ class ExpenseRequest(TimeStampedModel):
     submitted_at = models.DateTimeField(null=True, blank=True)
     decided_at = models.DateTimeField(null=True, blank=True)
     decision_note = models.TextField(null=True, blank=True)
-    # The documents module isn't built yet; kept so the column matches the workbook.
-    supporting_document_id = models.UUIDField(null=True, blank=True)
+    supporting_document = models.ForeignKey(
+        "documents.Document", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
 
     class Meta:
         db_table = "expense_requests"
@@ -139,7 +140,9 @@ class Expense(TimeStampedModel):
     verified_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True, related_name="+"
     )
-    supporting_document_id = models.UUIDField(null=True, blank=True)
+    supporting_document = models.ForeignKey(
+        "documents.Document", on_delete=models.PROTECT, null=True, blank=True, related_name="+"
+    )
 
     class Meta:
         db_table = "expenses"

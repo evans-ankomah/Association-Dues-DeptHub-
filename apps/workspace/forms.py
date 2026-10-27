@@ -54,12 +54,13 @@ class AddMemberForm(forms.Form):
 class MeetingForm(forms.ModelForm):
     class Meta:
         model = Meeting
-        fields = ["title", "committee", "scheduled_at", "location_text", "notes"]
+        fields = ["title", "committee", "scheduled_at", "location_text", "notes", "minutes_document"]
         labels = {
             "committee": "Committee",
             "scheduled_at": "When",
             "location_text": "Where",
             "notes": "Agenda or minutes",
+            "minutes_document": "Minutes document (optional)",
         }
         help_texts = {
             "committee": "Leave empty for an executive meeting (visible to department executives only).",
@@ -71,12 +72,16 @@ class MeetingForm(forms.ModelForm):
             "scheduled_at": DATETIME,
             "location_text": forms.TextInput(attrs=INPUT),
             "notes": forms.Textarea(attrs={**INPUT, "rows": 8}),
+            "minutes_document": forms.Select(attrs=INPUT),
         }
 
-    def __init__(self, *args, committees=None, allow_executive=True, **kwargs):
+    def __init__(self, *args, committees=None, allow_executive=True, minutes_documents=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["committee"].queryset = committees
         self.fields["committee"].required = not allow_executive
+        self.fields["minutes_document"].queryset = minutes_documents
+        self.fields["minutes_document"].required = False
+        self.fields["minutes_document"].help_text = "Upload the signed minutes under Documents first."
 
 
 class TaskForm(forms.ModelForm):

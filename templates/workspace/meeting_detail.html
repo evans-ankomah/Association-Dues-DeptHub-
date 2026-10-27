@@ -26,6 +26,7 @@
   <section class="card p-5 lg:col-span-2">
     <h2 class="text-sm font-semibold text-slate-700">Agenda and minutes</h2>
     <div class="mt-2 whitespace-pre-line text-sm text-slate-800">{{ meeting.notes|default:"Nothing recorded yet." }}</div>
+    {% if minutes %}<p class="mt-4 text-sm"><a href="{% url 'documents:detail' minutes.pk %}" class="text-brand-700 hover:underline">Minutes: {{ minutes.title }} (v{{ minutes.version_number }})</a></p>{% endif %}
   </section>
   <section class="card p-5">
     <h2 class="text-sm font-semibold text-slate-700">Action items</h2>

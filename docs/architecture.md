@@ -28,6 +28,7 @@ Browser ──HTTP──> Django (gunicorn)
 | `events` | Events, approval, registration with capacity and waitlist, QR and manual attendance |
 | `service_requests` | Member requests, triage and assignment, comments (requester-visible or staff-only), restricted categories |
 | `workspace` | Committees and their members, meetings with minutes, tasks linked to committees, events and meetings, handover notes |
+| `documents` | Document metadata, private file storage, versions, review, visibility and audited downloads |
 | `reporting` | Dashboards, finance report, exports |
 | `api` | REST API v1 and OpenAPI schema |
 
@@ -71,6 +72,19 @@ Views and API endpoints are thin. Business rules live in `apps/*/services*.py`, 
 - A committee's chair manages its members, meetings and tasks without needing `committees.manage`, but only for that committee: they can't move a meeting or task into or out of it.
 - Visibility: managers see everything in the department; members see committees they sit on, those committees' meetings and tasks, and tasks assigned to them. Executive meetings (no committee) are visible to department executives only.
 - The assignee moves a task through to-do, in progress, blocked and done; cancelling, reassigning and re-dating are for managers. A done task always has a completion time (database check).
+
+## Documents
+
+- Files are stored in `STORAGES["documents"]`: a `FileSystemStorage` under `PRIVATE_MEDIA_ROOT` (default `private_media/`) with no public URL. It is outside `MEDIA_ROOT` and the static folders, and nothing serves it. Every download goes through `/documents/<id>/download/`, which re-checks access, forces `Content-Disposition: attachment` with `nosniff`, and writes a `document.downloaded` audit event. For production, point `STORAGES["documents"]` at a **private** object-storage bucket.
+- Uploads are limited to PDF, Office (docx/xlsx/pptx), CSV, text, PNG and JPEG, up to `DOCUMENT_MAX_UPLOAD_BYTES` (10 MB). The contents are checked against the extension (magic bytes / OOXML structure), so a renamed HTML or executable is rejected. Size and SHA-256 checksum are recorded. Storage keys are random.
+- Versions chain through `previous_version_document`. Approving a new version archives the previously approved one.
+- Who sees what:
+  - *Only me*: the uploader only, not even stewards.
+  - *Financial evidence* (category `financial`): finance officers (anyone with a finance role, plus the President and HoD as expense approvers) and the uploader, whatever visibility was chosen.
+  - *Committee*: that committee's current members and stewards.
+  - *Department*: everyone in the department once **approved** by a steward (`committees.manage`) other than the uploader. Drafts and pending uploads are visible to the uploader and stewards only.
+- `collaboration` and `public` visibility exist in the schema but aren't offered until Phase 4.
+- Meeting minutes and expense evidence link to documents through `meetings.minutes_document_id` and `*.supporting_document_id`. Linking re-checks that the user can see the document.
 
 ## Background jobs
 

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}{{ doc.title }} · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <a href="{% url 'documents:list' %}" class="text-sm text-brand-700 hover:underline">← Documents</a>
+    <h1 class="mt-1 flex flex-wrap items-center gap-3 text-2xl font-semibold">{{ doc.title }} {% status_badge doc.review_status doc.get_review_status_display %}</h1>
+    <p class="mt-1 text-sm text-slate-600">{{ doc.category_label }} · version {{ doc.version_number }} · uploaded by {{ doc.uploaded_by.display_name }} on {{ doc.uploaded_at|date:"j M Y, H:i" }}</p>
+  </div>
+  <a href="{% url 'documents:download' doc.pk %}" class="btn btn-primary">Download</a>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-3">
+  <div class="space-y-6 lg:col-span-2">
+    <section class="card p-5 text-sm">
+      <dl class="grid gap-3 sm:grid-cols-2">
+        <div><dt class="text-slate-500">File</dt><dd class="break-all">{{ doc.original_filename }}</dd></div>
+        <div><dt class="text-slate-500">Size</dt><dd>{{ doc.file_size_bytes|filesizeformat }} · {{ doc.mime_type }}</dd></div>
+        <div><dt class="text-slate-500">Shared with</dt><dd>{% if doc.category == "financial" %}Finance officers only{% elif doc.visibility == "committee" %}{{ doc.committee.name }}{% else %}{{ doc.get_visibility_display }}{% endif %}</dd></div>
+        <div><dt class="text-slate-500">SHA-256</dt><dd class="break-all font-mono text-xs">{{ doc.checksum_sha256 }}</dd></div>
+      </dl>
+    </section>
+    {% if versions|length > 1 %}
+    <section class="card overflow-x-auto">
+      <h2 class="px-4 pt-4 text-sm font-semibold text-slate-700">Versions</h2>
+      <table class="table-base mt-2"><tbody class="divide-y divide-slate-100">
+        {% for v in versions %}<tr {% if v.pk == doc.pk %}class="bg-brand-50"{% endif %}><td><a href="{% url 'documents:detail' v.pk %}" class="text-brand-700 hover:underline">Version {{ v.version_number }}</a></td><td>{{ v.uploaded_at|date:"j M Y" }}</td><td>{{ v.uploaded_by.display_name }}</td><td>{% status_badge v.review_status v.get_review_status_display %}</td></tr>{% endfor %}
+      </tbody></table>
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="space-y-4">
+    {% if can_review %}
+    <form method="post" action="{% url 'documents:action' doc.pk %}" class="card space-y-2 p-4">{% csrf_token %}
+      <h2 class="text-sm font-semibold">Review</h2>
+      <label for="note" class="field-label">Note (optional)</label><textarea id="note" name="note" rows="2" class="field-input"></textarea>
+      <div class="flex gap-2"><button name="action" value="approve" class="btn btn-primary">Approve</button><button name="action" value="reject" class="btn btn-secondary">Reject</button></div>
+    </form>
+    {% endif %}
+    {% if is_uploader and doc.review_status == "draft" or is_uploader and doc.review_status == "rejected" %}
+      {% if doc.visibility != "owner_only" %}<form method="post" action="{% url 'documents:action' doc.pk %}">{% csrf_token %}<button name="action" value="submit" class="btn btn-primary w-full">Send for review</button></form>{% endif %}
+    {% endif %}
+    {% if can_add_version %}
+    <form method="post" action="{% url 'documents:add_version' doc.pk %}" enctype="multipart/form-data" class="card space-y-2 p-4">{% csrf_token %}
+      <h2 class="text-sm font-semibold">Upload a new version</h2>
+      {% include "partials/_field.html" with field=version_form.file %}
+      <div class="flex flex-wrap gap-2"><button name="submit" class="btn btn-primary">Upload and send for review</button><button name="draft" class="btn btn-secondary">Upload as draft</button></div>
+    </form>
+    {% endif %}
+    {% if can_archive %}<form method="post" action="{% url 'documents:action' doc.pk %}">{% csrf_token %}<button name="action" value="archive" class="btn btn-secondary w-full">Archive</button></form>{% endif %}
+  </aside>
+</div>
+{% endblock %}

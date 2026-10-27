@@ -278,6 +278,13 @@ def save_meeting(meeting, *, actor):
         require_perm(actor, "committees.manage", department)
     if meeting.committee_id and meeting.committee.department_id != department.pk:
         raise WorkspaceError("That committee belongs to another department.")
+    if meeting.minutes_document_id:
+        from apps.documents.services import can_view as can_view_document  # documents depends on workspace
+
+        if meeting.minutes_document.department_id != department.pk or not can_view_document(
+            actor, meeting.minutes_document
+        ):
+            raise WorkspaceError("Choose a minutes document you can see in this department.")
     if creating:
         meeting.created_by = actor
     before = (

@@ -14,6 +14,8 @@
 | `PAYSTACK_SECRET_KEY`, `PAYSTACK_PUBLIC_KEY` | for online payment | Use the `sk_test_` key until you go live |
 | `SMS_BACKEND` | no | `disabled` (default) or `console`. No real SMS provider is wired in yet. |
 | `SECURE_SSL_REDIRECT`, `SECURE_HSTS_SECONDS` | no | Defaults are strict. Lower HSTS while first testing HTTPS. |
+| `PRIVATE_MEDIA_ROOT` | yes (prod) | Folder for uploaded documents. Must be a persistent volume, **never** served by the web server or proxy. Back it up with the database. |
+| `DOCUMENT_MAX_UPLOAD_BYTES` | no | Upload limit, default 10 MB. Keep the proxy's request-body limit a little above this. |
 
 Never commit `.env` files. Use `.env.example` as the template.
 
@@ -53,6 +55,12 @@ docker compose -f docker-compose.prod.yml exec -T db pg_dump -U "$POSTGRES_USER"
 
 # restore into an empty database
 docker compose -f docker-compose.prod.yml exec -T db pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists < depthub-YYYY-MM-DD.dump
+```
+
+Uploaded documents live in the `private_media` volume, not the database. Back it up at the same time:
+
+```bash
+docker run --rm -v depthub_private_media:/data -v "$PWD":/backup alpine tar czf /backup/documents-$(date +%F).tgz -C /data .
 ```
 
 **Test a restore every term** into a separate database, and check that the dashboard totals match production. A backup that has never been restored isn't a backup.

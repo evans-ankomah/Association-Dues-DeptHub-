@@ -11,6 +11,7 @@
   {% include "partials/_field.html" with field=form.committee %}
   <div class="grid gap-4 sm:grid-cols-2">{% include "partials/_field.html" with field=form.scheduled_at %}{% include "partials/_field.html" with field=form.location_text %}</div>
   {% include "partials/_field.html" with field=form.notes %}
+  {% include "partials/_field.html" with field=form.minutes_document %}
   <div class="flex flex-wrap gap-3"><button class="btn btn-primary">Save</button><a href="{{ back }}" class="btn btn-secondary">Cancel</a></div>
 </form>
 {% endblock %}

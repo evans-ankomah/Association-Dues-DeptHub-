@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Upload document · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+{% url 'documents:list' as back %}
+{% include "partials/_page_header.html" with title="Upload document" back_url=back back_label="Documents" %}
+<form method="post" enctype="multipart/form-data" class="card max-w-2xl space-y-4 p-6" novalidate x-data="{ visibility: '{{ form.visibility.value|default:'department' }}' }">
+  {% csrf_token %}
+  {% include "partials/_form_errors.html" %}
+  {% include "partials/_field.html" with field=form.file %}
+  {% include "partials/_field.html" with field=form.title %}
+  <div class="grid gap-4 sm:grid-cols-2">{% include "partials/_field.html" with field=form.category %}{% include "partials/_field.html" with field=form.visibility %}</div>
+  <div x-show="visibility === 'committee'" x-cloak>{% include "partials/_field.html" with field=form.committee %}</div>
+  <p class="text-xs text-slate-500">Documents shared beyond you are only visible to members once a document steward has approved them.</p>
+  <div class="flex flex-wrap gap-3"><button name="submit" class="btn btn-primary">Upload and send for review</button><button name="draft" class="btn btn-secondary">Upload as draft</button><a href="{{ back }}" class="btn btn-secondary">Cancel</a></div>
+</form>
+{% endblock %}
