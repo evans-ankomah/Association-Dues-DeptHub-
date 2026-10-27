@@ -65,6 +65,16 @@ BADGE_STYLES = {
     "ended": "bg-slate-200 text-slate-600",
     # documents
     "pending_review": "bg-amber-100 text-amber-800",
+    # resources
+    "available": "bg-brand-100 text-brand-800",
+    "reserved": "bg-sky-100 text-sky-800",
+    "maintenance": "bg-amber-100 text-amber-800",
+    "retired": "bg-slate-200 text-slate-600",
+    "checked_out": "bg-sky-100 text-sky-800",
+    "excellent": "bg-brand-100 text-brand-800",
+    "good": "bg-brand-100 text-brand-800",
+    "fair": "bg-amber-100 text-amber-800",
+    "needs_repair": "bg-red-100 text-red-800",
 }
 
 LABELS = {

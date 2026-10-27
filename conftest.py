@@ -10,6 +10,21 @@ from apps.common.tests.factories import (
 )
 
 
+@pytest.fixture(scope="session")
+def django_db_setup(django_db_setup, django_db_blocker):
+    """Make sure the role catalogue exists at the start of every session.
+
+    A migration installs it, but a transactional test (transaction=True) flushes every table when
+    it finishes. pytest-django runs those tests last, so the current session is unaffected, but a
+    later session reusing the database (--reuse-db) would otherwise start without any roles.
+    """
+    from apps.access.catalog import sync_catalog
+    from apps.access.models import Permission, Role, RolePermission
+
+    with django_db_blocker.unblock():
+        sync_catalog(Role, Permission, RolePermission)
+
+
 @pytest.fixture
 def department(db):
     return DepartmentFactory(code="CSE", name="Computer Science and Engineering")

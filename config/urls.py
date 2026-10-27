@@ -19,6 +19,7 @@ urlpatterns = [
     path("requests/", include("apps.service_requests.urls")),
     path("workspace/", include("apps.workspace.urls")),
     path("documents/", include("apps.documents.urls")),
+    path("resources/", include("apps.resources.urls")),
     path("reports/", include("apps.reporting.urls")),
     path("api/", include("apps.api.urls")),
     path("django-admin/", admin.site.urls),

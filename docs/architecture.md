@@ -29,6 +29,7 @@ Browser ──HTTP──> Django (gunicorn)
 | `service_requests` | Member requests, triage and assignment, comments (requester-visible or staff-only), restricted categories |
 | `workspace` | Committees and their members, meetings with minutes, tasks linked to committees, events and meetings, handover notes |
 | `documents` | Document metadata, private file storage, versions, review, visibility and audited downloads |
+| `resources` | Assets (equipment, facilities, venues), condition and availability, bookings with overlap protection |
 | `reporting` | Dashboards, finance report, exports |
 | `api` | REST API v1 and OpenAPI schema |
 
@@ -85,6 +86,16 @@ Views and API endpoints are thin. Business rules live in `apps/*/services*.py`, 
   - *Department*: everyone in the department once **approved** by a steward (`committees.manage`) other than the uploader. Drafts and pending uploads are visible to the uploader and stewards only.
 - `collaboration` and `public` visibility exist in the schema but aren't offered until Phase 4.
 - Meeting minutes and expense evidence link to documents through `meetings.minutes_document_id` and `*.supporting_document_id`. Linking re-checks that the user can see the document.
+
+## Assets and bookings
+
+- Custodians (`assets.manage`) keep the inventory. Asset tags are unique per department.
+- Anyone with a role in the department can request a booking. A custodian other than the requester approves, rejects, checks out and records the return.
+- **Overlapping bookings are blocked twice.** The service locks the asset row and refuses a booking that overlaps an approved or checked-out one, with a clear message. A PostgreSQL exclusion constraint (`ex_booking_no_overlap`, `btree_gist`, half-open `[start, end)`) makes such overlaps impossible even under concurrent approvals or direct writes. Back-to-back bookings are allowed.
+- Overlapping *requests* may coexist. Approving one automatically rejects the others for that slot and tells their requesters.
+- Assets under maintenance or retired can't be booked. Taking an asset out of service needs upcoming approved bookings cleared first. Returning an asset as *needs repair* puts it into maintenance.
+- Members see when an asset is busy, but not who booked it or why.
+- Utilisation: booked hours (approved, checked out, returned) clipped to the reporting window ÷ hours in the window.
 
 ## Background jobs
 

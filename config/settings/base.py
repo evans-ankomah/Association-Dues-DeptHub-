@@ -23,6 +23,7 @@ DJANGO_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
+    "django.contrib.postgres",
 ]
 THIRD_PARTY_APPS = [
     "django_htmx",
@@ -43,6 +44,7 @@ LOCAL_APPS = [
     "apps.service_requests",
     "apps.workspace",
     "apps.documents",
+    "apps.resources",
     "apps.reporting",
     "apps.api",
 ]

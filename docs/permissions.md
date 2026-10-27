@@ -47,6 +47,7 @@ The **member base** is these permissions:
 | The platform admin's Django admin access never grants finance authority (finance actions go through services that check finance permissions) | `accounts.models.User.has_perm`, `finance.services.*` |
 | Events: the organiser who created an event can't approve it | `events.services.decide_event` |
 | Service requests: nobody handles their own request; restricted requests are visible only to their handler | `service_requests.services` |
+| Bookings: the requester can't approve their own booking; overlaps are refused by the service and by a database constraint | `resources.services.approve`, `ex_booking_no_overlap` |
 
 ## Operations modules
 
@@ -55,6 +56,7 @@ The **member base** is these permissions:
 | Events | See published, completed and cancelled events; register, cancel their own registration, check in with the QR code | `events.manage`: create, approve (not their own), cancel, complete, mark attendance, export attendance |
 | Service requests | Submit; see their own requests and requester-visible comments; reply, withdraw, confirm or reopen | `requests.manage`: the department queue, triage, assign, staff-only notes, resolve or decline. **Restricted** requests only for holders of the category's handling role (HoD / adviser). Never their own request. |
 | Committees, meetings, tasks | See committees they sit on, their meetings and tasks, and tasks assigned to them; update their own tasks' status. Executives also see executive meetings. | `committees.manage`: everything in the department. A committee **chair** manages their own committee's members, meetings and tasks. |
+| Assets and bookings | Browse bookable assets and busy times; request and cancel their own bookings | `assets.manage`: inventory, approve or decline (not their own), check out, record returns and condition |
 | Documents | Approved department documents and approved documents of their committees | Upload: `committees.manage`, `announcements.publish`, finance roles, committee chairs (for their committee). Review: `committees.manage`, not your own upload. **Financial evidence** only for finance roles; **only-me** documents only for the uploader. |
 
 Records belonging to another department always return 404, including through the API and check-in links.

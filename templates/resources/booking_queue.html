@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}Booking queue · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <h1 class="text-2xl font-semibold">Booking queue</h1>
+  <a href="{% url 'resources:assets' %}" class="btn btn-secondary">Resources</a>
+</div>
+<nav class="mb-4 flex flex-wrap gap-2 text-sm" aria-label="Filter bookings">
+  <a href="?status=requested" class="rounded-full px-3 py-1 {% if status == 'requested' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Awaiting decision</a>
+  <a href="?status=upcoming" class="rounded-full px-3 py-1 {% if status == 'upcoming' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Upcoming</a>
+  <a href="?status=current" class="rounded-full px-3 py-1 {% if status == 'current' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Checked out</a>
+  <a href="?status=" class="rounded-full px-3 py-1 {% if not status %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">All</a>
+</nav>
+<div class="card overflow-x-auto">
+  <table class="table-base">
+    <thead><tr><th>Resource</th><th>When</th><th>Requested by</th><th>Status</th></tr></thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for b in page %}<tr class="hover:bg-slate-50"><td><a href="{% url 'resources:booking' b.pk %}" class="font-medium text-brand-700 hover:underline">{{ b.asset.name }}</a></td><td>{{ b.starts_at|date:"D j M, H:i" }} – {{ b.ends_at|date:"j M, H:i" }}</td><td>{{ b.requested_by_user.display_name }}</td><td>{% status_badge b.booking_status b.get_booking_status_display %}</td></tr>
+      {% empty %}<tr><td colspan="4" class="py-10 text-center text-slate-500">Nothing here.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% include "partials/_pagination.html" %}
+</div>
+{% endblock %}
