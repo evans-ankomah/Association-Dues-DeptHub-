@@ -93,6 +93,23 @@
 </section>
 {% endif %}
 
+{% if request_queue %}
+<section class="mt-8 flex flex-wrap gap-3" aria-label="Service requests">
+  <a href="{% url 'service_requests:queue' %}" class="card flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50"><span class="text-xl font-semibold tabular-nums text-slate-800">{{ request_queue.open }}</span> open request{{ request_queue.open|pluralize }}</a>
+  {% if request_queue.mine %}<a href="{% url 'service_requests:queue' %}?scope=mine" class="card flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50"><span class="text-xl font-semibold tabular-nums text-brand-700">{{ request_queue.mine }}</span> assigned to you</a>{% endif %}
+  {% if request_queue.overdue %}<a href="{% url 'service_requests:queue' %}?status=overdue" class="card flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50"><span class="text-xl font-semibold tabular-nums text-red-700">{{ request_queue.overdue }}</span> overdue</a>{% endif %}
+</section>
+{% endif %}
+
+{% if my_open_requests %}
+<section class="mt-8" aria-labelledby="req-heading">
+  <div class="flex items-end justify-between"><h2 id="req-heading" class="text-lg font-semibold">Your open requests</h2><a href="{% url 'service_requests:mine' %}" class="text-sm text-brand-700 hover:underline">All requests</a></div>
+  <ul class="card mt-3 divide-y divide-slate-100">
+    {% for sr in my_open_requests %}<li class="flex items-center justify-between gap-4 px-4 py-3 text-sm"><a href="{% url 'service_requests:detail' sr.pk %}" class="min-w-0 truncate text-slate-800 hover:text-brand-700">{{ sr.title }} <span class="text-xs text-slate-500">{{ sr.reference }}</span></a>{% status_badge sr.request_status sr.get_request_status_display %}</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+
 {% if upcoming_events %}
 <section class="mt-8" aria-labelledby="events-heading">
   <div class="flex items-end justify-between"><h2 id="events-heading" class="text-lg font-semibold">Coming up</h2><a href="{% url 'events:list' %}" class="text-sm text-brand-700 hover:underline">All events</a></div>

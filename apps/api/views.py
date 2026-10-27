@@ -25,6 +25,8 @@ from apps.finance.services.balances import with_balances
 from apps.memberships.models import DepartmentMembership
 from apps.memberships.views import outstanding_subquery
 from apps.reporting import services as reporting
+from apps.service_requests import services as request_service
+from apps.service_requests.models import ServiceRequest
 
 from . import serializers as s
 from .permissions import HasDeptPermission
@@ -309,6 +311,45 @@ class EventViewSet(viewsets.ReadOnlyModelViewSet):
             raise ValidationError({"detail": "You aren't registered for this event."})
         registration = _business(event_service.cancel_registration, registration, actor=request.user)
         return Response(s.RegistrationSerializer(registration).data)
+
+
+class ServiceRequestViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+    """Your own service requests by default; `?scope=queue` for officers (requests.manage).
+
+    Restricted requests appear only for their requester and designated handler. Comments are
+    filtered the same way: staff-only notes are never returned to the requester.
+    """
+
+    permission_classes = [HasDeptPermission]
+    required_perms = {"create": ("requests.create",), "*": ("requests.create", "requests.manage")}
+
+    def get_serializer_class(self):
+        return s.ServiceRequestCreateSerializer if self.action == "create" else s.ServiceRequestSerializer
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # schema generation has no department
+            return ServiceRequest.objects.none()
+        department = _department(self.request)
+        qs = request_service.visible_requests(self.request.user, department)
+        if self.request.query_params.get("scope") == "queue":
+            if not has_any_perm(self.request.user, ("requests.manage",), department):
+                raise PermissionDenied()
+            qs = qs.exclude(requester_membership__user=self.request.user)
+        elif self.action == "list":
+            qs = qs.filter(requester_membership__user=self.request.user)
+        if self.request.query_params.get("status"):
+            qs = qs.filter(request_status=self.request.query_params["status"])
+        return qs.select_related("assigned_to_user__profile").order_by("-submitted_at")
+
+    def create(self, request, *args, **kwargs):
+        payload = s.ServiceRequestCreateSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        sr = _business(
+            request_service.submit, _department(request), actor=request.user, **payload.validated_data
+        )
+        return Response(
+            s.ServiceRequestSerializer(sr, context={"request": request}).data, status=status.HTTP_201_CREATED
+        )
 
 
 class FinanceSummaryView(APIView):

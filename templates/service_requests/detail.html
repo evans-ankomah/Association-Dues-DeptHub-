@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}{{ sr.reference }} · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  {% if is_handler %}<a href="{% url 'service_requests:queue' %}" class="text-sm text-brand-700 hover:underline">← Request queue</a>{% else %}<a href="{% url 'service_requests:mine' %}" class="text-sm text-brand-700 hover:underline">← My requests</a>{% endif %}
+  <h1 class="mt-1 flex flex-wrap items-center gap-3 text-2xl font-semibold">{{ sr.title }} {% status_badge sr.request_status sr.get_request_status_display %}{% if sr.is_restricted %}<span class="badge bg-violet-100 text-violet-800">Restricted</span>{% endif %}</h1>
+  <p class="mt-1 text-sm text-slate-600">{{ sr.reference }} · {{ sr.type_label }} · submitted {{ sr.submitted_at|date:"j M Y, H:i" }}{% if is_handler %} by {{ sr.requester_membership.user.display_name }}{% endif %}</p>
+</div>
+
+<div class="grid gap-6 lg:grid-cols-3">
+  <div class="space-y-6 lg:col-span-2">
+    <section class="card p-5">
+      <h2 class="text-sm font-semibold text-slate-700">Details</h2>
+      <p class="mt-2 whitespace-pre-line text-sm text-slate-800">{{ sr.description }}</p>
+      {% if sr.resolution_summary %}
+      <div class="mt-4 rounded-lg {% if sr.request_status == 'rejected' %}bg-red-50 text-red-900{% else %}bg-brand-50 text-brand-900{% endif %} p-3 text-sm">
+        <p class="font-medium">{% if sr.request_status == "rejected" %}Declined{% else %}Outcome{% endif %}{% if sr.resolved_at %} · {{ sr.resolved_at|date:"j M Y" }}{% endif %}</p>
+        <p class="mt-1 whitespace-pre-line">{{ sr.resolution_summary }}</p>
+      </div>
+      {% endif %}
+    </section>
+
+    <section class="card p-5" aria-labelledby="conv-heading">
+      <h2 id="conv-heading" class="text-sm font-semibold text-slate-700">Updates</h2>
+      <ol class="mt-3 space-y-3">
+        {% for c in comments %}
+        <li class="rounded-lg border p-3 text-sm {% if c.visibility == 'staff_only' %}border-amber-200 bg-amber-50{% else %}border-slate-200{% endif %}">
+          <p class="text-xs text-slate-500"><span class="font-medium text-slate-700">{{ c.author_user.display_name }}</span> · {{ c.created_at|date:"j M Y, H:i" }}{% if c.visibility == "staff_only" %} · <span class="font-medium text-amber-800">Staff only</span>{% endif %}</p>
+          <p class="mt-1 whitespace-pre-line">{{ c.body }}</p>
+        </li>
+        {% empty %}<li class="text-sm text-slate-500">No updates yet.</li>{% endfor %}
+      </ol>
+      {% if can_comment %}
+      <form method="post" action="{% url 'service_requests:comment' sr.pk %}" class="mt-4 space-y-2">{% csrf_token %}
+        <label for="body" class="field-label">Add a comment</label><textarea id="body" name="body" rows="3" class="field-input" required></textarea>
+        <div class="flex flex-wrap items-center gap-3">
+          <button class="btn btn-primary">Post</button>
+          {% if is_handler %}<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="staff_only" value="1" class="h-4 w-4 rounded border-slate-300"> Staff-only note (the requester won't see it)</label>{% endif %}
+        </div>
+      </form>
+      {% endif %}
+    </section>
+  </div>
+
+  <aside class="space-y-4">
+    <section class="card p-4 text-sm">
+      <dl class="space-y-2">
+        <div class="flex justify-between gap-3"><dt class="text-slate-500">Priority</dt><dd>{{ sr.get_priority_display }}</dd></div>
+        <div class="flex justify-between gap-3"><dt class="text-slate-500">Handled by</dt><dd>{{ sr.assigned_to_user.display_name|default:"Not yet assigned" }}</dd></div>
+        <div class="flex justify-between gap-3"><dt class="text-slate-500">Target date</dt><dd class="{% if sr.is_open and sr.due_at < now %}font-medium text-red-700{% endif %}">{{ sr.due_at|date:"j M Y"|default:"—" }}</dd></div>
+      </dl>
+    </section>
+
+    {% if is_requester and not is_handler %}
+      {% if sr.request_status == "resolved" %}
+      <section class="card space-y-3 p-4">
+        <h2 class="text-sm font-semibold">Is it sorted?</h2>
+        <form method="post" action="{% url 'service_requests:requester_action' sr.pk %}">{% csrf_token %}<button name="action" value="confirm" class="btn btn-primary w-full">Yes, close it</button></form>
+        <form method="post" action="{% url 'service_requests:requester_action' sr.pk %}" class="space-y-2">{% csrf_token %}
+          <label for="reason" class="field-label">Not yet: what still needs doing?</label><textarea id="reason" name="reason" rows="2" class="field-input" required></textarea>
+          <button name="action" value="reopen" class="btn btn-secondary w-full">Reopen</button>
+        </form>
+      </section>
+      {% elif sr.is_open %}
+      <form method="post" action="{% url 'service_requests:requester_action' sr.pk %}">{% csrf_token %}<button name="action" value="withdraw" class="btn btn-secondary w-full">Withdraw request</button></form>
+      {% endif %}
+    {% endif %}
+
+    {% if is_handler %}
+    <section class="card space-y-3 p-4">
+      <h2 class="text-sm font-semibold">Handle</h2>
+      {% if sr.is_open %}
+        {% if sr.assigned_to_user_id != user.pk %}<form method="post" action="{% url 'service_requests:handler_action' sr.pk %}">{% csrf_token %}<button name="action" value="take" class="btn btn-secondary w-full">Assign to me</button></form>{% endif %}
+        <form method="post" action="{% url 'service_requests:handler_action' sr.pk %}" class="space-y-2">{% csrf_token %}
+          {% include "partials/_field.html" with field=triage_form.assignee %}
+          {% include "partials/_field.html" with field=triage_form.priority %}
+          <button name="action" value="triage" class="btn btn-secondary w-full">Save</button>
+        </form>
+        <div class="flex gap-2">
+          {% if sr.request_status != "in_progress" %}<form method="post" action="{% url 'service_requests:handler_action' sr.pk %}" class="flex-1">{% csrf_token %}<button name="action" value="in_progress" class="btn btn-secondary w-full">Start work</button></form>{% endif %}
+          {% if sr.request_status != "waiting" and sr.request_status != "submitted" %}<form method="post" action="{% url 'service_requests:handler_action' sr.pk %}" class="flex-1">{% csrf_token %}<button name="action" value="waiting" class="btn btn-secondary w-full">Wait on requester</button></form>{% endif %}
+        </div>
+        <form method="post" action="{% url 'service_requests:handler_action' sr.pk %}" class="space-y-2 border-t border-slate-200 pt-3">{% csrf_token %}
+          <label for="summary" class="field-label">Outcome (shown to the requester)</label><textarea id="summary" name="summary" rows="3" class="field-input" required></textarea>
+          <div class="flex gap-2"><button name="action" value="resolve" class="btn btn-primary">Resolve</button><button name="action" value="reject" class="btn btn-secondary">Decline</button></div>
+        </form>
+      {% elif sr.request_status == "resolved" %}
+        <p class="text-sm text-slate-600">Waiting for the requester to confirm.</p>
+        <form method="post" action="{% url 'service_requests:handler_action' sr.pk %}">{% csrf_token %}<button name="action" value="close" class="btn btn-secondary w-full">Close without confirmation</button></form>
+      {% else %}
+        <p class="text-sm text-slate-600">This request is finished.</p>
+      {% endif %}
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

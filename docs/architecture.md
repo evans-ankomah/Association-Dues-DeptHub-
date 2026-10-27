@@ -26,6 +26,7 @@ Browser ──HTTP──> Django (gunicorn)
 | `finance` | Dues types, assessments, waivers, payments, allocations, receipts, Paystack, refunds, reconciliation, budgets, expenses, reminders |
 | `communications` | Notices, notifications (in-app, email, SMS) |
 | `events` | Events, approval, registration with capacity and waitlist, QR and manual attendance |
+| `service_requests` | Member requests, triage and assignment, comments (requester-visible or staff-only), restricted categories |
 | `reporting` | Dashboards, finance report, exports |
 | `api` | REST API v1 and OpenAPI schema |
 
@@ -53,6 +54,15 @@ Views and API endpoints are thin. Business rules live in `apps/*/services*.py`, 
 - Registration locks the event row (`select_for_update`) before counting places, so two members can't take the last place at once. Once full, registrations go on a waitlist and the earliest waitlisted member is promoted (and notified) when a place frees up.
 - Check-in: the organiser shows a QR code that points to a signed check-in URL. Members scan it and confirm while signed in, from one hour before the start until the end; arriving more than 15 minutes late is recorded as *late*. Organisers can also mark attendance by hand. Every attendance change is audited.
 - Attendance rate (workbook `v_event_attendance_summary`): registered members who attended ÷ registrations holding a place. Cancelled and waitlisted registrations are not expected attendees; events without registration have no rate.
+
+## Service requests
+
+- Members submit a request of a listed type; each type has a target resolution time that sets `due_at`. Members can't mark their own request urgent.
+- **Restricted categories** (currently results/academic-record queries) never enter the general queue. They are assigned on submission to a holder of the category's handling role (HoD / faculty adviser), and only the requester, the assignee and current holders of that role can see them. If nobody holds the role, submission is refused rather than leaving the request unseen.
+- **Staff-only comments** are never shown or sent to the requester, including when the requester is themselves an officer. Nobody can handle their own request.
+- Audit events record status, priority, assignee and visibility changes, never the description, resolution or comment text. Notifications for restricted requests omit the title.
+- Welfare and disciplinary cases are deliberately not offered as request types (product plan §3.5, §12).
+- SLA summary (workbook `v_service_request_sla_summary`): resolution time is calendar time from submission to resolution, without pausing while waiting on the requester; withdrawn requests are excluded; on-time = resolved by `due_at`.
 
 ## Background jobs
 

@@ -16,6 +16,9 @@ from apps.finance.models import DuesAssessment, DuesBalance, Payment
 from apps.finance.services.balances import with_balances
 from apps.finance.services.spending import paid_expenses
 from apps.institutions.models import AcademicSession
+from apps.service_requests.models import ServiceRequest
+from apps.service_requests.services import overdue as request_overdue
+from apps.service_requests.services import visible_requests
 
 from . import services
 from .exports import respond
@@ -53,6 +56,21 @@ def home(request):
         }
     if has_any_perm(request.user, ("announcements.view", "announcements.publish"), department):
         context["notices"] = visible_announcements(request.user, department).order_by("-published_at")[:3]
+    if has_perm(request.user, "requests.create", department):
+        context["my_open_requests"] = ServiceRequest.objects.filter(
+            department=department,
+            requester_membership__user=request.user,
+            request_status__in=ServiceRequest.OPEN,
+        ).order_by("-submitted_at")[:3]
+    if has_perm(request.user, "requests.manage", department):
+        queue = visible_requests(request.user, department).exclude(requester_membership__user=request.user)
+        context["request_queue"] = {
+            "open": queue.filter(request_status__in=ServiceRequest.OPEN).count(),
+            "mine": queue.filter(
+                request_status__in=ServiceRequest.OPEN, assigned_to_user=request.user
+            ).count(),
+            "overdue": request_overdue(queue).count(),
+        }
     if has_any_perm(request.user, ("events.register", "events.manage"), department):
         context["upcoming_events"] = (
             visible_events(request.user, department)

@@ -48,6 +48,16 @@ def has_any_perm(user, codes, department) -> bool:
     return bool(permission_codes(user, department).intersection(codes))
 
 
+def users_with_perm(code: str, department, role_code: str | None = None):
+    """Ids of active users holding `code` in `department` (optionally through one role only)."""
+    assignments = RoleAssignment.objects.current().filter(
+        _scope_filter(department), role__grants__permission__permission_code=code, user__is_active=True
+    )
+    if role_code:
+        assignments = assignments.filter(role__role_code=role_code)
+    return set(assignments.values_list("user_id", flat=True))
+
+
 def role_codes(user, department) -> frozenset[str]:
     if not getattr(user, "is_authenticated", False) or department is None:
         return frozenset()
