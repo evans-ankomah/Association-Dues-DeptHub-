@@ -56,6 +56,13 @@ BADGE_STYLES = {
     "waiting": "bg-amber-100 text-amber-800",
     "resolved": "bg-brand-100 text-brand-800",
     "high": "bg-amber-100 text-amber-800",
+    # workspace
+    "todo": "bg-slate-100 text-slate-700",
+    "blocked": "bg-red-100 text-red-800",
+    "done": "bg-brand-100 text-brand-800",
+    "held": "bg-brand-100 text-brand-800",
+    "inactive": "bg-slate-200 text-slate-600",
+    "ended": "bg-slate-200 text-slate-600",
 }
 
 LABELS = {

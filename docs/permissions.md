@@ -54,6 +54,7 @@ The **member base** is these permissions:
 |---|---|---|
 | Events | See published, completed and cancelled events; register, cancel their own registration, check in with the QR code | `events.manage`: create, approve (not their own), cancel, complete, mark attendance, export attendance |
 | Service requests | Submit; see their own requests and requester-visible comments; reply, withdraw, confirm or reopen | `requests.manage`: the department queue, triage, assign, staff-only notes, resolve or decline. **Restricted** requests only for holders of the category's handling role (HoD / adviser). Never their own request. |
+| Committees, meetings, tasks | See committees they sit on, their meetings and tasks, and tasks assigned to them; update their own tasks' status. Executives also see executive meetings. | `committees.manage`: everything in the department. A committee **chair** manages their own committee's members, meetings and tasks. |
 
 Records belonging to another department always return 404, including through the API and check-in links.
 

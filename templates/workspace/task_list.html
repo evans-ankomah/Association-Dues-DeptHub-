@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}Tasks · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <h1 class="text-2xl font-semibold">Tasks</h1>
+  {% if can_create %}<a href="{% url 'workspace:task_create' %}" class="btn btn-primary">New task</a>{% endif %}
+</div>
+<nav class="mb-4 flex flex-wrap gap-2 text-sm" aria-label="Filter tasks">
+  <a href="?scope=mine&status={{ status }}" class="rounded-full px-3 py-1 {% if scope == 'mine' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Mine</a>
+  <a href="?scope=all&status={{ status }}" class="rounded-full px-3 py-1 {% if scope == 'all' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Everything I can see</a>
+  <span class="mx-1 border-l border-slate-200"></span>
+  <a href="?scope={{ scope }}&status=open" class="rounded-full px-3 py-1 {% if status == 'open' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Open</a>
+  <a href="?scope={{ scope }}&status=overdue" class="rounded-full px-3 py-1 {% if status == 'overdue' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Overdue</a>
+  <a href="?scope={{ scope }}&status=done" class="rounded-full px-3 py-1 {% if status == 'done' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Done</a>
+  <a href="?scope={{ scope }}&status=" class="rounded-full px-3 py-1 {% if not status %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">All</a>
+</nav>
+<div class="card overflow-x-auto">
+  <table class="table-base">
+    <thead><tr><th>Task</th><th>Owner</th><th>For</th><th>Priority</th><th>Due</th><th>Status</th></tr></thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for t in page %}
+      <tr class="hover:bg-slate-50">
+        <td><a href="{% url 'workspace:task' t.pk %}" class="font-medium text-brand-700 hover:underline">{{ t.title }}</a></td>
+        <td>{{ t.assigned_to_user.display_name|default:"—" }}</td>
+        <td class="max-w-56 truncate text-slate-600">{{ t.committee.name|default:"" }}{% if t.event %}{% if t.committee %} · {% endif %}{{ t.event.title }}{% endif %}{% if t.meeting and not t.committee %}{{ t.meeting.title }}{% endif %}</td>
+        <td>{% if t.priority == "high" or t.priority == "urgent" %}{% status_badge t.priority %}{% else %}{{ t.get_priority_display }}{% endif %}</td>
+        <td class="{% if t.is_open and t.due_at and t.due_at < now %}font-medium text-red-700{% endif %}">{{ t.due_at|date:"j M Y"|default:"—" }}</td>
+        <td>{% status_badge t.task_status t.get_task_status_display %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="6" class="py-10 text-center text-slate-500">No tasks.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% include "partials/_pagination.html" %}
+</div>
+{% endblock %}

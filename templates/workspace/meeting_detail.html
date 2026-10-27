@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}{{ meeting.title }} · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <a href="{% url 'workspace:meetings' %}" class="text-sm text-brand-700 hover:underline">← Meetings</a>
+    <h1 class="mt-1 flex flex-wrap items-center gap-3 text-2xl font-semibold">{{ meeting.title }} {% status_badge meeting.meeting_status %}</h1>
+    <p class="mt-1 text-sm text-slate-600">{% if meeting.committee %}<a href="{% url 'workspace:committee' meeting.committee.pk %}" class="text-brand-700 hover:underline">{{ meeting.committee.name }}</a>{% else %}Executive meeting{% endif %} · {{ meeting.scheduled_at|date:"D j M Y, H:i" }}{% if meeting.location_text %} · {{ meeting.location_text }}{% endif %}</p>
+  </div>
+  {% if can_manage %}
+  <div class="flex flex-wrap gap-2">
+    <a href="{% url 'workspace:meeting_edit' meeting.pk %}" class="btn btn-secondary">{% if meeting.meeting_status == "held" %}Record minutes{% else %}Edit{% endif %}</a>
+    <a href="{% url 'workspace:task_create' %}?meeting={{ meeting.pk }}{% if meeting.committee %}&committee={{ meeting.committee.pk }}{% endif %}" class="btn btn-secondary">Add action item</a>
+    {% if meeting.meeting_status == "scheduled" %}
+    <form method="post" action="{% url 'workspace:meeting_action' meeting.pk %}" class="flex gap-2">{% csrf_token %}
+      {% if meeting.scheduled_at <= now %}<button name="status" value="held" class="btn btn-primary">Mark held</button>{% endif %}
+      <button name="status" value="cancelled" class="btn btn-secondary">Cancel meeting</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+<div class="grid gap-6 lg:grid-cols-3">
+  <section class="card p-5 lg:col-span-2">
+    <h2 class="text-sm font-semibold text-slate-700">Agenda and minutes</h2>
+    <div class="mt-2 whitespace-pre-line text-sm text-slate-800">{{ meeting.notes|default:"Nothing recorded yet." }}</div>
+  </section>
+  <section class="card p-5">
+    <h2 class="text-sm font-semibold text-slate-700">Action items</h2>
+    <ul class="mt-2 space-y-2 text-sm">
+      {% for t in tasks %}<li><a href="{% url 'workspace:task' t.pk %}" class="text-brand-700 hover:underline">{{ t.title }}</a><span class="block text-xs text-slate-500">{{ t.assigned_to_user.display_name|default:"Unassigned" }} · {% status_badge t.task_status t.get_task_status_display %}</span></li>
+      {% empty %}<li class="text-slate-500">None.</li>{% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

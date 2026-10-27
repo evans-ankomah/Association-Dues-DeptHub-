@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}{{ committee.name }} · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <a href="{% url 'workspace:committees' %}" class="text-sm text-brand-700 hover:underline">← Committees</a>
+    <h1 class="mt-1 flex flex-wrap items-center gap-3 text-2xl font-semibold">{{ committee.name }} {% if committee.committee_status != "active" %}{% status_badge committee.committee_status %}{% endif %}</h1>
+    <p class="mt-1 text-sm text-slate-600">{{ committee.academic_session }} · chair: {{ committee.chair_membership.user.display_name|default:"none" }}</p>
+  </div>
+  {% if can_manage %}<div class="flex flex-wrap gap-2"><a href="{% url 'workspace:committee_edit' committee.pk %}" class="btn btn-secondary">Edit</a>{% if committee.committee_status == "active" %}<a href="{% url 'workspace:meeting_create' %}?committee={{ committee.pk }}" class="btn btn-secondary">Schedule meeting</a><a href="{% url 'workspace:task_create' %}?committee={{ committee.pk }}" class="btn btn-primary">New task</a>{% endif %}</div>{% endif %}
+</div>
+
+<div class="grid gap-6 lg:grid-cols-3">
+  <div class="space-y-6 lg:col-span-2">
+    {% if committee.description %}<section class="card p-5"><h2 class="text-sm font-semibold text-slate-700">Mandate</h2><p class="mt-2 whitespace-pre-line text-sm">{{ committee.description }}</p></section>{% endif %}
+    {% if committee.handover_notes %}<section class="card border-l-4 border-l-sky-500 p-5"><h2 class="text-sm font-semibold text-slate-700">Handover notes</h2><p class="mt-2 whitespace-pre-line text-sm">{{ committee.handover_notes }}</p></section>{% endif %}
+
+    <section class="card overflow-x-auto">
+      <h2 class="px-4 pt-4 text-sm font-semibold text-slate-700">Tasks</h2>
+      <table class="table-base mt-2">
+        <thead><tr><th>Task</th><th>Owner</th><th>Due</th><th>Status</th></tr></thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for t in tasks %}
+          <tr><td><a href="{% url 'workspace:task' t.pk %}" class="text-brand-700 hover:underline">{{ t.title }}</a></td><td>{{ t.assigned_to_user.display_name|default:"—" }}</td>
+            <td class="{% if t.is_open and t.due_at and t.due_at < now %}font-medium text-red-700{% endif %}">{{ t.due_at|date:"j M"|default:"—" }}</td><td>{% status_badge t.task_status t.get_task_status_display %}</td></tr>
+          {% empty %}<tr><td colspan="4" class="py-6 text-center text-slate-500">No tasks.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card p-5">
+      <h2 class="text-sm font-semibold text-slate-700">Recent meetings</h2>
+      <ul class="mt-2 divide-y divide-slate-100 text-sm">
+        {% for m in meetings %}<li class="flex items-center justify-between gap-3 py-2"><a href="{% url 'workspace:meeting' m.pk %}" class="text-brand-700 hover:underline">{{ m.title }}</a><span class="flex items-center gap-2 text-slate-500">{{ m.scheduled_at|date:"j M Y" }} {% status_badge m.meeting_status %}</span></li>
+        {% empty %}<li class="py-2 text-slate-500">No meetings yet.</li>{% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <aside class="space-y-4">
+    <section class="card p-4">
+      <h2 class="text-sm font-semibold">Members</h2>
+      <ul class="mt-2 space-y-2 text-sm">
+        {% for s in active_seats %}
+        <li class="flex items-center justify-between gap-2">
+          <span><span class="font-medium">{{ s.department_membership.user.display_name }}</span> <span class="text-xs text-slate-500">{{ s.role_title }}</span></span>
+          {% if can_manage and s.department_membership_id != committee.chair_membership_id %}
+          <form method="post" action="{% url 'workspace:committee_action' committee.pk %}">{% csrf_token %}<input type="hidden" name="seat" value="{{ s.pk }}"><button name="action" value="end_member" class="text-xs text-red-700 hover:underline" aria-label="Remove {{ s.department_membership.user.display_name }}">Remove</button></form>
+          {% endif %}
+        </li>
+        {% empty %}<li class="text-slate-500">No members.</li>{% endfor %}
+      </ul>
+      {% if add_form and committee.committee_status == "active" %}
+      <form method="post" action="{% url 'workspace:committee_action' committee.pk %}" class="mt-4 space-y-2 border-t border-slate-200 pt-3">{% csrf_token %}
+        {% include "partials/_field.html" with field=add_form.membership %}
+        {% include "partials/_field.html" with field=add_form.role_title %}
+        <button name="action" value="add_member" class="btn btn-secondary w-full">Add member</button>
+      </form>
+      {% endif %}
+      {% if past_seats %}
+      <details class="mt-4 text-sm"><summary class="cursor-pointer text-slate-600">Past members ({{ past_seats|length }})</summary>
+        <ul class="mt-2 space-y-1 text-slate-600">{% for s in past_seats %}<li>{{ s.department_membership.user.display_name }} · {{ s.role_title }} · left {{ s.left_at|date:"j M Y" }}</li>{% endfor %}</ul>
+      </details>
+      {% endif %}
+    </section>
+    {% if can_archive %}
+    <form method="post" action="{% url 'workspace:committee_action' committee.pk %}" onsubmit="return confirm('Archive this committee and end every seat?')">{% csrf_token %}<button name="action" value="archive" class="btn btn-secondary w-full">Archive committee</button></form>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}
