@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}Operations report · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div><h1 class="text-2xl font-semibold">Operations report</h1><p class="mt-1 text-sm text-slate-600">{{ current_department }} · {{ report.start|date:"j M Y" }} – {{ report.end|date:"j M Y" }}</p></div>
+  <div class="flex flex-wrap gap-2" aria-label="Exports">
+    <a class="btn btn-secondary" href="{% url 'reporting:export_operations' %}?session={{ session.pk }}&start={{ report.start|date:'Y-m-d' }}&end={{ report.end|date:'Y-m-d' }}&format=xlsx">Excel</a>
+    <a class="btn btn-secondary" href="{% url 'reporting:export_operations' %}?session={{ session.pk }}&start={{ report.start|date:'Y-m-d' }}&end={{ report.end|date:'Y-m-d' }}&format=csv">CSV</a>
+  </div>
+</div>
+
+<form method="get" class="flex flex-wrap items-end gap-3">
+  <div><label for="session" class="field-label">Members of session</label>
+    <select id="session" name="session" class="field-input">{% for s in sessions %}<option value="{{ s.pk }}" {% if s.pk == session.pk %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></div>
+  <div><label for="start" class="field-label">From</label><input id="start" name="start" type="date" value="{{ report.start|date:'Y-m-d' }}" class="field-input"></div>
+  <div><label for="end" class="field-label">to</label><input id="end" name="end" type="date" value="{{ report.end|date:'Y-m-d' }}" class="field-input"></div>
+  <button class="btn btn-secondary">Update</button>
+</form>
+<p class="mt-2 text-xs text-slate-500">All figures are counts and averages. Each section is shown only to roles allowed to see its records.</p>
+
+{% if report.events %}
+<section id="events" class="mt-8" aria-labelledby="ev-h">
+  <h2 id="ev-h" class="text-lg font-semibold">Events and attendance</h2>
+  <div class="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-3">
+    {% include "partials/_stat.html" with label="Events held or upcoming" value=report.events.count %}
+    {% include "partials/_stat.html" with label="Check-ins" value=report.events.attended hint="Present + late" %}
+    {% include "partials/_stat.html" with label="Average attendance rate" value=report.events.average_rate|percent hint="Events that needed registration" %}
+  </div>
+  <div class="card mt-4 overflow-x-auto">
+    <table class="table-base">
+      <thead><tr><th>Event</th><th class="text-right">Registered</th><th class="text-right">Waitlisted</th><th class="text-right">Present</th><th class="text-right">Late</th><th class="text-right">Rate</th></tr></thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for r in report.events.rows %}
+        <tr><td><a href="{% url 'events:detail' r.event.pk %}" class="text-brand-700 hover:underline">{{ r.event.title }}</a><p class="text-xs text-slate-500">{{ r.event.starts_at|date:"j M Y" }}</p></td>
+          <td class="text-right tabular-nums">{% if r.event.registration_required %}{{ r.event.registered }}{% else %}—{% endif %}</td>
+          <td class="text-right tabular-nums">{% if r.event.registration_required %}{{ r.event.waitlisted }}{% else %}—{% endif %}</td>
+          <td class="text-right tabular-nums">{{ r.event.present }}</td><td class="text-right tabular-nums">{{ r.event.late }}</td>
+          <td class="text-right tabular-nums">{{ r.rate|percent }}</td></tr>
+        {% empty %}<tr><td colspan="6" class="py-6 text-center text-slate-500">No events in this period.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="mt-2 text-xs text-slate-500">Rate = registered members who attended ÷ registrations holding a place. Cancelled and waitlisted registrations aren't counted as expected attendees. Open events have no rate.</p>
+</section>
+{% endif %}
+
+{% if report.participation %}
+<section class="mt-8" aria-labelledby="pa-h">
+  <h2 id="pa-h" class="text-lg font-semibold">Member participation · {{ session }}</h2>
+  <div class="mt-3 grid gap-4 lg:grid-cols-3">
+    <div class="grid grid-cols-2 gap-4 lg:col-span-1 lg:grid-cols-1">
+      {% include "partials/_stat.html" with label="Active members" value=report.participation.active %}
+      {% include "partials/_stat.html" with label="Attended at least one event" value=report.participation.rate|percent hint=report.participation.attended|stringformat:"d"|add:" members" %}
+    </div>
+    <figure class="card p-5 lg:col-span-2">
+      <figcaption class="text-sm font-semibold text-slate-700">Attended at least one event, by level</figcaption>
+      <ul class="mt-4 space-y-3">
+        {% for row in report.participation.by_level %}
+        <li>
+          <div class="flex items-baseline justify-between text-sm"><span class="text-slate-700">{{ row.level }}</span><span class="tabular-nums text-slate-900">{{ row.rate|percent }}</span></div>
+          <div class="mt-1 h-2 rounded-full bg-slate-100" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ row.rate|floatformat:'0u'|default:'0' }}" aria-label="{{ row.level }} participation"><div class="h-2 rounded-full bg-brand-600" style="width: {{ row.rate|floatformat:'2u'|default:'0' }}%"></div></div>
+          <p class="mt-1 text-xs text-slate-500">{{ row.attended }} of {{ row.members }} member{{ row.members|pluralize }}</p>
+        </li>
+        {% empty %}<li class="text-sm text-slate-500">No active members.</li>{% endfor %}
+      </ul>
+    </figure>
+  </div>
+</section>
+{% endif %}
+
+{% if report.requests %}
+<section id="requests" class="mt-8" aria-labelledby="sr-h">
+  <h2 id="sr-h" class="text-lg font-semibold">Service requests</h2>
+  <div class="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-5">
+    {% include "partials/_stat.html" with label="Submitted" value=report.requests.total %}
+    {% include "partials/_stat.html" with label="Still open" value=report.requests.open %}
+    {% include "partials/_stat.html" with label="Overdue" value=report.requests.overdue value_class="text-red-700" %}
+    {% include "partials/_stat.html" with label="Average days to resolve" value=report.requests.avg_days|floatformat:1|default:"—" %}
+    {% include "partials/_stat.html" with label="Resolved on time" value=report.requests.on_time_rate|percent %}
+  </div>
+  <div class="card mt-4 overflow-x-auto">
+    <table class="table-base">
+      <thead><tr><th>Type</th><th class="text-right">Submitted</th><th class="text-right">Open</th><th class="text-right">Overdue</th><th class="text-right">Resolved</th><th class="text-right">Declined</th><th class="text-right">Avg days</th><th class="text-right">On time</th></tr></thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for r in report.requests.rows %}<tr><td>{{ r.label }}</td><td class="text-right tabular-nums">{{ r.total }}</td><td class="text-right tabular-nums">{{ r.open }}</td><td class="text-right tabular-nums {% if r.overdue %}text-red-700{% endif %}">{{ r.overdue }}</td><td class="text-right tabular-nums">{{ r.resolved }}</td><td class="text-right tabular-nums">{{ r.rejected }}</td><td class="text-right tabular-nums">{{ r.avg_days|floatformat:1|default:"—" }}</td><td class="text-right tabular-nums">{{ r.on_time_rate|percent }}</td></tr>
+        {% empty %}<tr><td colspan="8" class="py-6 text-center text-slate-500">No requests in this period.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="mt-2 text-xs text-slate-500">Resolution time is calendar days from submission to resolution, including time spent waiting on the requester. Withdrawn requests are excluded. Restricted requests are counted only for their handlers.</p>
+</section>
+{% endif %}
+
+{% if report.tasks %}
+<section id="tasks" class="mt-8" aria-labelledby="tk-h">
+  <h2 id="tk-h" class="text-lg font-semibold">Tasks</h2>
+  <div class="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    {% include "partials/_stat.html" with label="Tasks due" value=report.tasks.total %}
+    {% include "partials/_stat.html" with label="Open" value=report.tasks.open %}
+    {% include "partials/_stat.html" with label="Overdue" value=report.tasks.overdue value_class="text-red-700" %}
+    {% include "partials/_stat.html" with label="Done on time" value=report.tasks.on_time_rate|percent %}
+  </div>
+  <div class="card mt-4 overflow-x-auto">
+    <table class="table-base">
+      <thead><tr><th>Committee</th><th class="text-right">Tasks</th><th class="text-right">Open</th><th class="text-right">Overdue</th><th class="text-right">Done</th><th class="text-right">On time</th></tr></thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for r in report.tasks.rows %}<tr><td>{{ r.name }}</td><td class="text-right tabular-nums">{{ r.total }}</td><td class="text-right tabular-nums">{{ r.open }}</td><td class="text-right tabular-nums {% if r.overdue %}text-red-700{% endif %}">{{ r.overdue }}</td><td class="text-right tabular-nums">{{ r.done }}</td><td class="text-right tabular-nums">{{ r.on_time_rate|percent }}</td></tr>
+        {% empty %}<tr><td colspan="6" class="py-6 text-center text-slate-500">No tasks due in this period.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if report.resources %}
+<section id="resources" class="mt-8" aria-labelledby="rs-h">
+  <h2 id="rs-h" class="text-lg font-semibold">Resource use</h2>
+  <div class="mt-3 grid grid-cols-2 gap-4 lg:grid-cols-3">
+    {% include "partials/_stat.html" with label="Bookings" value=report.resources.bookings %}
+    {% include "partials/_stat.html" with label="Hours booked" value=report.resources.hours|floatformat:0 %}
+    {% include "partials/_stat.html" with label="In maintenance now" value=report.resources.maintenance %}
+  </div>
+  <div class="card mt-4 overflow-x-auto">
+    <table class="table-base">
+      <thead><tr><th>Asset</th><th class="text-right">Bookings</th><th class="text-right">Hours</th><th class="text-right">Share of period</th></tr></thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for r in report.resources.rows %}<tr><td><a href="{% url 'resources:asset' r.asset.pk %}" class="text-brand-700 hover:underline">{{ r.asset.name }}</a></td><td class="text-right tabular-nums">{{ r.bookings }}</td><td class="text-right tabular-nums">{{ r.hours|floatformat:1 }}</td><td class="text-right tabular-nums">{{ r.share|percent }}</td></tr>
+        {% empty %}<tr><td colspan="4" class="py-6 text-center text-slate-500">No assets yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="mt-2 text-xs text-slate-500">Approved, checked-out and returned bookings, clipped to the period. Share = booked hours ÷ all hours in the period.</p>
+</section>
+{% endif %}
+{% endblock %}

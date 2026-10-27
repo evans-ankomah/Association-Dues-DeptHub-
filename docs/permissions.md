@@ -59,6 +59,8 @@ The **member base** is these permissions:
 | Assets and bookings | Browse bookable assets and busy times; request and cancel their own bookings | `assets.manage`: inventory, approve or decline (not their own), check out, record returns and condition |
 | Documents | Approved department documents and approved documents of their committees | Upload: `committees.manage`, `announcements.publish`, finance roles, committee chairs (for their committee). Review: `committees.manage`, not your own upload. **Financial evidence** only for finance roles; **only-me** documents only for the uploader. |
 
+The **operations report** shows each section only to roles that manage that area, plus `audit.view` holders, who get every section except restricted requests. It contains aggregates only.
+
 Records belonging to another department always return 404, including through the API and check-in links.
 
 ## Assigning roles

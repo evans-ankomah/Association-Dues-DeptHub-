@@ -22,7 +22,7 @@ from apps.service_requests.services import visible_requests
 from apps.workspace.models import Task
 from apps.workspace.services import overdue as task_overdue
 
-from . import services
+from . import operations, services
 from .exports import respond
 
 
@@ -153,6 +153,93 @@ def finance_report(request):
             "can_export": has_perm(request.user, "finance.report.export", department),
         },
     )
+
+
+def _date_range(request, session):
+    end = _parse_date(request.GET.get("end")) or timezone.localdate()
+    start = _parse_date(request.GET.get("start")) or (
+        session.starts_on if session else end - datetime.timedelta(days=90)
+    )
+    if start > end:
+        start, end = end, start
+    return start, end
+
+
+@permission_required(*operations.REPORT_VIEWERS)
+def operations_report(request):
+    department = request.department
+    session = _session_from(request)
+    start, end = _date_range(request, session)
+    report = operations.build(request.user, department, session, start, end)
+    return render(
+        request,
+        "reporting/operations_report.html",
+        {
+            "report": report,
+            "session": session,
+            "sessions": AcademicSession.objects.filter(institution_id=department.institution_id),
+        },
+    )
+
+
+@permission_required(*operations.REPORT_VIEWERS)
+def export_operations(request):
+    """One sheet per section the viewer can see. Aggregates only; audited like other exports."""
+    department = request.department
+    session = _session_from(request)
+    start, end = _date_range(request, session)
+    report = operations.build(request.user, department, session, start, end)
+    fmt = request.GET.get("format", "xlsx")
+    headers = ["Section", "Item", "Measure", "Value"]
+    data = []
+    for row in report.get("events", {}).get("rows", []):
+        e = row["event"]
+        label = f"{timezone.localtime(e.starts_at):%Y-%m-%d} {e.title}"
+        data += [
+            ["Events", label, "Registered", e.registered],
+            ["Events", label, "Attended", row["attended"]],
+            ["Events", label, "Attendance rate %", round(row["rate"], 1) if row["rate"] is not None else ""],
+        ]
+    for row in report.get("requests", {}).get("rows", []):
+        for measure in ("total", "open", "overdue", "resolved", "rejected"):
+            data.append(["Service requests", row["label"], measure.capitalize(), row[measure]])
+        data.append(
+            [
+                "Service requests",
+                row["label"],
+                "Average days to resolve",
+                round(row["avg_days"], 1) if row["avg_days"] is not None else "",
+            ]
+        )
+    for row in report.get("tasks", {}).get("rows", []):
+        for measure in ("total", "open", "overdue", "done"):
+            data.append(["Tasks", row["name"], measure.capitalize(), row[measure]])
+    for row in report.get("resources", {}).get("rows", []):
+        data += [
+            ["Resources", str(row["asset"]), "Bookings", row["bookings"]],
+            ["Resources", str(row["asset"]), "Hours booked", round(row["hours"], 1)],
+        ]
+    if "participation" in report:
+        p = report["participation"]
+        data += [
+            ["Participation", "All levels", "Active members", p["active"]],
+            ["Participation", "All levels", "Attended an event", p["attended"]],
+        ]
+    record(
+        "report.exported",
+        None,
+        entity_type="operations_report",
+        actor=request.user,
+        department=department,
+        after={
+            "report": "operations",
+            "start": str(start),
+            "end": str(end),
+            "rows": len(data),
+            "format": fmt,
+        },
+    )
+    return respond(f"{department.code}-operations-{start:%Y%m%d}-{end:%Y%m%d}", headers, data, fmt)
 
 
 @permission_required("finance.report.export")

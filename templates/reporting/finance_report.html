@@ -1,14 +1,6 @@
 {% extends "base.html" %}
 {% load money %}
-{% block title %}Finance report · {{ SITE_NAME }}{% if expenses_by_category %}
-<div class="card mt-4 overflow-x-auto">
-  <h3 class="px-4 pt-4 text-sm font-semibold text-slate-700">Paid expenses by category</h3>
-  <table class="table-base mt-2"><tbody class="divide-y divide-slate-100">
-    {% for r in expenses_by_category %}<tr><td>{{ r.category }}</td><td class="text-right tabular-nums">{{ r.total|money }}</td></tr>{% endfor %}
-  </tbody></table>
-</div>
-{% endif %}
-{% endblock %}
+{% block title %}Finance report · {{ SITE_NAME }}{% endblock %}
 
 {% block content %}
 <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
@@ -75,4 +67,12 @@
     </tbody>
   </table>
 </div>
+{% if expenses_by_category %}
+<div class="card mt-4 overflow-x-auto">
+  <h3 class="px-4 pt-4 text-sm font-semibold text-slate-700">Paid expenses by category</h3>
+  <table class="table-base mt-2"><tbody class="divide-y divide-slate-100">
+    {% for r in expenses_by_category %}<tr><td>{{ r.category }}</td><td class="text-right tabular-nums">{{ r.total|money }}</td></tr>{% endfor %}
+  </tbody></table>
+</div>
+{% endif %}
 {% endblock %}
