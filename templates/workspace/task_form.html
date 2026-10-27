@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{% if task.pk %}Edit task{% else %}New task{% endif %} · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+{% if task.pk %}{% url 'workspace:task' task.pk as back %}{% else %}{% url 'workspace:tasks' as back %}{% endif %}
+{% include "partials/_page_header.html" with title=task.pk|yesno:"Edit task,New task" back_url=back back_label="Back" %}
+<form method="post" class="card max-w-2xl space-y-4 p-6" novalidate>
+  {% csrf_token %}
+  {% include "partials/_form_errors.html" %}
+  {% include "partials/_field.html" with field=form.title %}
+  {% include "partials/_field.html" with field=form.description %}
+  <div class="grid gap-4 sm:grid-cols-3">{% include "partials/_field.html" with field=form.assigned_membership %}{% include "partials/_field.html" with field=form.priority %}{% include "partials/_field.html" with field=form.due_at %}</div>
+  <div class="grid gap-4 sm:grid-cols-3">{% include "partials/_field.html" with field=form.committee %}{% include "partials/_field.html" with field=form.event %}{% include "partials/_field.html" with field=form.meeting %}</div>
+  <div class="flex flex-wrap gap-3"><button class="btn btn-primary">Save</button><a href="{{ back }}" class="btn btn-secondary">Cancel</a></div>
+</form>
+{% endblock %}

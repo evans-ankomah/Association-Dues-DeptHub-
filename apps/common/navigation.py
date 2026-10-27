@@ -12,6 +12,18 @@ class NavItem:
     url_name: str
     permissions: tuple[str, ...] | None = None
     platform_admin_only: bool = False
+    # Key into VISIBILITY_CHECKS, for items that depend on data rather than permissions (e.g.
+    # sitting on a committee). The item shows when the permissions OR this check allow it.
+    visible_if: str | None = None
+
+
+def _workspace_visible(user, department):
+    from apps.workspace.services import can_see_workspace
+
+    return can_see_workspace(user, department)
+
+
+VISIBILITY_CHECKS = {"workspace": _workspace_visible}
 
 
 FINANCE_VIEWERS = (
@@ -69,6 +81,14 @@ NAV_SECTIONS: list[tuple[str, list[NavItem]]] = [
             NavItem("Request queue", "service_requests:queue", ("requests.manage",)),
         ],
     ),
+    (
+        "Workspace",
+        [
+            NavItem("Tasks", "workspace:tasks", ("committees.manage",), visible_if="workspace"),
+            NavItem("Committees", "workspace:committees", ("committees.manage",), visible_if="workspace"),
+            NavItem("Meetings", "workspace:meetings", ("committees.manage",), visible_if="workspace"),
+        ],
+    ),
     ("Members", [NavItem("Roster", "members:roster", ("members.roster.view", "members.roster.edit"))]),
     ("Account", [NavItem("Profile", "accounts:profile")]),
     ("Administration", [NavItem("Platform admin", "admin:index", platform_admin_only=True)]),
@@ -78,13 +98,22 @@ NAV_SECTIONS: list[tuple[str, list[NavItem]]] = [
 def build_nav(request, perms):
     sections = []
     path = request.path
+    checked = {}
     for title, items in NAV_SECTIONS:
         visible = []
         for item in items:
             if item.platform_admin_only and not request.user.is_staff:
                 continue
             if item.permissions is not None and not perms.intersection(item.permissions):
-                continue
+                if item.visible_if is None:
+                    continue
+                if item.visible_if not in checked:
+                    department = getattr(request, "department", None)
+                    checked[item.visible_if] = department is not None and VISIBILITY_CHECKS[item.visible_if](
+                        request.user, department
+                    )
+                if not checked[item.visible_if]:
+                    continue
             try:
                 url = reverse(item.url_name)
             except NoReverseMatch:

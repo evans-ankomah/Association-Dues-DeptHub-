@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}Committees · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div><h1 class="text-2xl font-semibold">Committees</h1><p class="mt-1 text-sm text-slate-600">{{ current_session }}{% if not can_manage %} · committees you sit on{% endif %}</p></div>
+  {% if can_manage %}<a href="{% url 'workspace:committee_create' %}" class="btn btn-primary">New committee</a>{% endif %}
+</div>
+<div class="grid gap-3 md:grid-cols-2">
+  {% for row in rows %}
+  <article class="card p-4">
+    <div class="flex items-center gap-2">{% if row.committee.committee_status != "active" %}{% status_badge row.committee.committee_status %}{% endif %}<a href="{% url 'workspace:committee' row.committee.pk %}" class="font-semibold text-slate-900 hover:text-brand-700 hover:underline">{{ row.committee.name }}</a></div>
+    {% if row.committee.description %}<p class="mt-1 line-clamp-2 text-sm text-slate-600">{{ row.committee.description }}</p>{% endif %}
+    <p class="mt-2 text-xs text-slate-500">Chair: {{ row.committee.chair_membership.user.display_name|default:"none" }} · {{ row.members }} member{{ row.members|pluralize }} · {{ row.open_tasks }} open task{{ row.open_tasks|pluralize }}</p>
+  </article>
+  {% empty %}
+  <div class="card p-10 text-center text-sm text-slate-500 md:col-span-2">No committees this session.</div>
+  {% endfor %}
+</div>
+{% endblock %}

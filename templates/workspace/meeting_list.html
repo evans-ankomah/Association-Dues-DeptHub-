@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}Meetings · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <h1 class="text-2xl font-semibold">Meetings</h1>
+  {% if can_create %}<a href="{% url 'workspace:meeting_create' %}" class="btn btn-primary">Schedule meeting</a>{% endif %}
+</div>
+<nav class="mb-4 flex gap-2 text-sm" aria-label="Filter meetings">
+  <a href="?when=upcoming" class="rounded-full px-3 py-1 {% if when == 'upcoming' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Upcoming</a>
+  <a href="?when=past" class="rounded-full px-3 py-1 {% if when == 'past' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Past</a>
+</nav>
+<div class="card overflow-x-auto">
+  <table class="table-base">
+    <thead><tr><th>Meeting</th><th>Committee</th><th>When</th><th>Where</th><th>Status</th></tr></thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for m in page %}
+      <tr class="hover:bg-slate-50"><td><a href="{% url 'workspace:meeting' m.pk %}" class="font-medium text-brand-700 hover:underline">{{ m.title }}</a></td>
+        <td>{{ m.committee.name|default:"Executive" }}</td><td>{{ m.scheduled_at|date:"D j M Y, H:i" }}</td><td class="max-w-56 truncate">{{ m.location_text|default:"—" }}</td><td>{% status_badge m.meeting_status %}</td></tr>
+      {% empty %}<tr><td colspan="5" class="py-10 text-center text-slate-500">No meetings.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% include "partials/_pagination.html" %}
+</div>
+{% endblock %}

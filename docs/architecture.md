@@ -27,6 +27,7 @@ Browser ──HTTP──> Django (gunicorn)
 | `communications` | Notices, notifications (in-app, email, SMS) |
 | `events` | Events, approval, registration with capacity and waitlist, QR and manual attendance |
 | `service_requests` | Member requests, triage and assignment, comments (requester-visible or staff-only), restricted categories |
+| `workspace` | Committees and their members, meetings with minutes, tasks linked to committees, events and meetings, handover notes |
 | `reporting` | Dashboards, finance report, exports |
 | `api` | REST API v1 and OpenAPI schema |
 
@@ -63,6 +64,13 @@ Views and API endpoints are thin. Business rules live in `apps/*/services*.py`, 
 - Audit events record status, priority, assignee and visibility changes, never the description, resolution or comment text. Notifications for restricted requests omit the title.
 - Welfare and disciplinary cases are deliberately not offered as request types (product plan §3.5, §12).
 - SLA summary (workbook `v_service_request_sla_summary`): resolution time is calendar time from submission to resolution, without pausing while waiting on the requester; withdrawn requests are excluded; on-time = resolved by `due_at`.
+
+## Committees, meetings and tasks
+
+- Committees belong to one academic session. Ending a seat keeps it as history (only one *active* seat per member, enforced by a partial unique index); archiving a committee at the end of a session ends every seat. Handover notes carry knowledge to the next session's committee.
+- A committee's chair manages its members, meetings and tasks without needing `committees.manage`, but only for that committee: they can't move a meeting or task into or out of it.
+- Visibility: managers see everything in the department; members see committees they sit on, those committees' meetings and tasks, and tasks assigned to them. Executive meetings (no committee) are visible to department executives only.
+- The assignee moves a task through to-do, in progress, blocked and done; cancelling, reassigning and re-dating are for managers. A done task always has a completion time (database check).
 
 ## Background jobs
 

@@ -41,6 +41,7 @@ LOCAL_APPS = [
     "apps.communications",
     "apps.events",
     "apps.service_requests",
+    "apps.workspace",
     "apps.reporting",
     "apps.api",
 ]

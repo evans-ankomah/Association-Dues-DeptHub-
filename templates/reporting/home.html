@@ -93,6 +93,15 @@
 </section>
 {% endif %}
 
+{% if my_tasks %}
+<section class="mt-8" aria-labelledby="tasks-heading">
+  <div class="flex items-end justify-between"><h2 id="tasks-heading" class="text-lg font-semibold">Your tasks{% if my_tasks.overdue %} <span class="ml-2 text-sm font-medium text-red-700">{{ my_tasks.overdue }} overdue</span>{% endif %}</h2><a href="{% url 'workspace:tasks' %}" class="text-sm text-brand-700 hover:underline">All tasks</a></div>
+  <ul class="card mt-3 divide-y divide-slate-100">
+    {% for t in my_tasks.items %}<li class="flex items-center justify-between gap-4 px-4 py-3 text-sm"><a href="{% url 'workspace:task' t.pk %}" class="min-w-0 truncate text-slate-800 hover:text-brand-700">{{ t.title }}</a><span class="flex shrink-0 items-center gap-3 text-slate-500">{{ t.due_at|date:"j M"|default:"" }} {% status_badge t.task_status t.get_task_status_display %}</span></li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+
 {% if request_queue %}
 <section class="mt-8 flex flex-wrap gap-3" aria-label="Service requests">
   <a href="{% url 'service_requests:queue' %}" class="card flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50"><span class="text-xl font-semibold tabular-nums text-slate-800">{{ request_queue.open }}</span> open request{{ request_queue.open|pluralize }}</a>

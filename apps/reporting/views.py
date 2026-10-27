@@ -1,7 +1,7 @@
 import datetime
 from decimal import Decimal
 
-from django.db.models import Sum
+from django.db.models import F, Sum
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 
@@ -19,6 +19,8 @@ from apps.institutions.models import AcademicSession
 from apps.service_requests.models import ServiceRequest
 from apps.service_requests.services import overdue as request_overdue
 from apps.service_requests.services import visible_requests
+from apps.workspace.models import Task
+from apps.workspace.services import overdue as task_overdue
 
 from . import services
 from .exports import respond
@@ -71,6 +73,11 @@ def home(request):
             ).count(),
             "overdue": request_overdue(queue).count(),
         }
+    my_tasks = Task.objects.filter(
+        department=department, assigned_to_user=request.user, task_status__in=Task.OPEN
+    ).order_by(F("due_at").asc(nulls_last=True))
+    if my_tasks.exists():
+        context["my_tasks"] = {"items": my_tasks[:5], "overdue": task_overdue(my_tasks).count()}
     if has_any_perm(request.user, ("events.register", "events.manage"), department):
         context["upcoming_events"] = (
             visible_events(request.user, department)

@@ -31,6 +31,10 @@ def test_seed_loads_and_seeded_staff_have_their_roles():
         "event_attendance",
         "service_requests",
         "service_request_comments",
+        "committees",
+        "committee_members",
+        "meetings",
+        "tasks",
     ):
         assert report.loaded[table] == manifest["row_counts"][table], table
     assert Role.objects.count() == 11

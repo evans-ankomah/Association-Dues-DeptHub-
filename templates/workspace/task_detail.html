@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}{{ task.title }} · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <a href="{% url 'workspace:tasks' %}" class="text-sm text-brand-700 hover:underline">← Tasks</a>
+    <h1 class="mt-1 flex flex-wrap items-center gap-3 text-2xl font-semibold">{{ task.title }} {% status_badge task.task_status task.get_task_status_display %}</h1>
+    <p class="mt-1 text-sm text-slate-600">Created by {{ task.created_by.display_name }} · {{ task.created_at|date:"j M Y" }}</p>
+  </div>
+  {% if can_manage %}<a href="{% url 'workspace:task_edit' task.pk %}" class="btn btn-secondary">Edit</a>{% endif %}
+</div>
+<div class="grid gap-6 lg:grid-cols-3">
+  <section class="card p-5 lg:col-span-2">
+    <h2 class="text-sm font-semibold text-slate-700">What needs doing</h2>
+    <p class="mt-2 whitespace-pre-line text-sm">{{ task.description|default:"No further detail." }}</p>
+  </section>
+  <aside class="space-y-4">
+    <section class="card p-4 text-sm">
+      <dl class="space-y-2">
+        <div class="flex justify-between gap-3"><dt class="text-slate-500">Owner</dt><dd>{{ task.assigned_to_user.display_name|default:"Unassigned" }}</dd></div>
+        <div class="flex justify-between gap-3"><dt class="text-slate-500">Priority</dt><dd>{{ task.get_priority_display }}</dd></div>
+        <div class="flex justify-between gap-3"><dt class="text-slate-500">Due</dt><dd class="{% if task.is_open and task.due_at and task.due_at < now %}font-medium text-red-700{% endif %}">{{ task.due_at|date:"j M Y, H:i"|default:"—" }}</dd></div>
+        {% if task.completed_at %}<div class="flex justify-between gap-3"><dt class="text-slate-500">Completed</dt><dd>{{ task.completed_at|date:"j M Y" }}</dd></div>{% endif %}
+        {% if task.committee %}<div class="flex justify-between gap-3"><dt class="text-slate-500">Committee</dt><dd><a href="{% url 'workspace:committee' task.committee.pk %}" class="text-brand-700 hover:underline">{{ task.committee.name }}</a></dd></div>{% endif %}
+        {% if task.event %}<div class="flex justify-between gap-3"><dt class="text-slate-500">Event</dt><dd>{{ task.event.title }}</dd></div>{% endif %}
+        {% if task.meeting %}<div class="flex justify-between gap-3"><dt class="text-slate-500">From meeting</dt><dd><a href="{% url 'workspace:meeting' task.meeting.pk %}" class="text-brand-700 hover:underline">{{ task.meeting.title }}</a></dd></div>{% endif %}
+      </dl>
+    </section>
+    {% if can_update %}
+    <form method="post" action="{% url 'workspace:task_status' task.pk %}" class="card space-y-2 p-4">{% csrf_token %}
+      <label for="status" class="field-label">Update status</label>
+      <select id="status" name="status" class="field-input">{% for v, l in statuses %}<option value="{{ v }}" {% if task.task_status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+      <button class="btn btn-primary w-full">Save</button>
+    </form>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}
