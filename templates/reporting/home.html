@@ -93,6 +93,21 @@
 </section>
 {% endif %}
 
+{% if upcoming_events %}
+<section class="mt-8" aria-labelledby="events-heading">
+  <div class="flex items-end justify-between"><h2 id="events-heading" class="text-lg font-semibold">Coming up</h2><a href="{% url 'events:list' %}" class="text-sm text-brand-700 hover:underline">All events</a></div>
+  <div class="mt-3 grid gap-3 lg:grid-cols-3">
+    {% for e in upcoming_events %}
+    <article class="card p-4">
+      <a href="{% url 'events:detail' e.pk %}" class="font-semibold text-slate-900 hover:text-brand-700 hover:underline">{{ e.title }}</a>
+      <p class="mt-1 text-sm text-slate-600">{{ e.starts_at|date:"D j M, H:i" }}{% if e.venue_text %} · {{ e.venue_text }}{% endif %}</p>
+      {% if e.registration_required %}<p class="mt-2 text-xs text-slate-500">Registration required</p>{% endif %}
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
 {% if notices %}
 <section class="mt-8" aria-labelledby="notice-heading">
   <div class="flex items-end justify-between"><h2 id="notice-heading" class="text-lg font-semibold">Latest notices</h2><a href="{% url 'communications:announcements' %}" class="text-sm text-brand-700 hover:underline">All notices</a></div>

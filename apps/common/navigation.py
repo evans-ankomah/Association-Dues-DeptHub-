@@ -61,6 +61,7 @@ NAV_SECTIONS: list[tuple[str, list[NavItem]]] = [
             NavItem("Reports", "reporting:finance", FINANCE_VIEWERS),
         ],
     ),
+    ("Activities", [NavItem("Events", "events:list", ("events.register", "events.manage"))]),
     ("Members", [NavItem("Roster", "members:roster", ("members.roster.view", "members.roster.edit"))]),
     ("Account", [NavItem("Profile", "accounts:profile")]),
     ("Administration", [NavItem("Platform admin", "admin:index", platform_admin_only=True)]),

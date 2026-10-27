@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}Checked in · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-md">
+  <div class="card p-6 text-center">
+    <p class="text-4xl" aria-hidden="true">✓</p>
+    <h1 class="mt-2 text-xl font-semibold">You're checked in</h1>
+    <p class="mt-1 text-sm text-slate-600">{{ event.title }} · {{ attendance.checked_in_at|date:"H:i" }} {% status_badge attendance.attendance_status %}</p>
+    <a href="{% url 'events:detail' event.pk %}" class="btn btn-secondary mt-6">View event</a>
+  </div>
+</div>
+{% endblock %}

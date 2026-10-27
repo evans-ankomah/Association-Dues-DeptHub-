@@ -25,6 +25,7 @@ Browser ──HTTP──> Django (gunicorn)
 | `audit` | Append-only audit events, request ids |
 | `finance` | Dues types, assessments, waivers, payments, allocations, receipts, Paystack, refunds, reconciliation, budgets, expenses, reminders |
 | `communications` | Notices, notifications (in-app, email, SMS) |
+| `events` | Events, approval, registration with capacity and waitlist, QR and manual attendance |
 | `reporting` | Dashboards, finance report, exports |
 | `api` | REST API v1 and OpenAPI schema |
 
@@ -45,6 +46,13 @@ Views and API endpoints are thin. Business rules live in `apps/*/services*.py`, 
 ## Department and session context
 
 `DepartmentContextMiddleware` puts `request.department` and `request.academic_session` on every request. The department is always chosen from the user's own role assignments; a value in the session isn't trusted on its own. Every query is filtered by `request.department`, so another department's record returns 404.
+
+## Events
+
+- An organiser (`events.manage`) drafts an event and sends it for approval; a **different** `events.manage` holder approves it. Members only ever see published, completed and cancelled events; drafts are a 404 to them.
+- Registration locks the event row (`select_for_update`) before counting places, so two members can't take the last place at once. Once full, registrations go on a waitlist and the earliest waitlisted member is promoted (and notified) when a place frees up.
+- Check-in: the organiser shows a QR code that points to a signed check-in URL. Members scan it and confirm while signed in, from one hour before the start until the end; arriving more than 15 minutes late is recorded as *late*. Organisers can also mark attendance by hand. Every attendance change is audited.
+- Attendance rate (workbook `v_event_attendance_summary`): registered members who attended ÷ registrations holding a place. Cancelled and waitlisted registrations are not expected attendees; events without registration have no rate.
 
 ## Background jobs
 

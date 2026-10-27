@@ -45,6 +45,15 @@ The **member base** is these permissions:
 | Expense requests: the requester can't approve, and nobody approves both steps | `finance.services.spending.decide_request` |
 | An expense is verified by someone other than its recorder | `finance.services.spending.verify_expense` |
 | The platform admin's Django admin access never grants finance authority (finance actions go through services that check finance permissions) | `accounts.models.User.has_perm`, `finance.services.*` |
+| Events: the organiser who created an event can't approve it | `events.services.decide_event` |
+
+## Operations modules
+
+| Area | Members (`events.register`, `requests.create`) | Officers |
+|---|---|---|
+| Events | See published, completed and cancelled events; register, cancel their own registration, check in with the QR code | `events.manage`: create, approve (not their own), cancel, complete, mark attendance, export attendance |
+
+Records belonging to another department always return 404, including through the API and check-in links.
 
 ## Assigning roles
 

@@ -13,6 +13,7 @@ router.register("dues", views.AssessmentViewSet, basename="dues")
 router.register("payments", views.PaymentViewSet, basename="payment")
 router.register("receipts", views.ReceiptViewSet, basename="receipt")
 router.register("announcements", views.AnnouncementViewSet, basename="announcement")
+router.register("events", views.EventViewSet, basename="event")
 
 urlpatterns = [
     path("v1/me/", views.MeView.as_view(), name="me"),

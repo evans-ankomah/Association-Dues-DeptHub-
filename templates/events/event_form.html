@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{% if event.pk %}Edit event{% else %}New event{% endif %} · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+{% if event.pk %}{% url 'events:detail' event.pk as back %}{% else %}{% url 'events:list' as back %}{% endif %}
+{% include "partials/_page_header.html" with title=event.pk|yesno:"Edit event,New event" back_url=back back_label=event.pk|yesno:"Event,Events" %}
+<form method="post" class="card max-w-2xl space-y-4 p-6" novalidate>
+  {% csrf_token %}
+  {% include "partials/_form_errors.html" %}
+  {% include "partials/_field.html" with field=form.title %}
+  <div class="grid gap-4 sm:grid-cols-2">{% include "partials/_field.html" with field=form.event_type %}{% include "partials/_field.html" with field=form.venue_text %}</div>
+  <div class="grid gap-4 sm:grid-cols-2">{% include "partials/_field.html" with field=form.starts_at %}{% include "partials/_field.html" with field=form.ends_at %}</div>
+  {% include "partials/_field.html" with field=form.description %}
+  {% include "partials/_field.html" with field=form.registration_required %}
+  <div class="grid gap-4 sm:grid-cols-2">{% include "partials/_field.html" with field=form.capacity %}{% include "partials/_field.html" with field=form.related_budget %}</div>
+  <div class="flex flex-wrap gap-3">
+    {% if not event.pk or event.event_status == "draft" %}<button name="submit" class="btn btn-primary">Save and send for approval</button><button name="draft" class="btn btn-secondary">Save draft</button>
+    {% else %}<button class="btn btn-primary">Save</button>{% endif %}
+    <a href="{{ back }}" class="btn btn-secondary">Cancel</a>
+  </div>
+</form>
+{% endblock %}

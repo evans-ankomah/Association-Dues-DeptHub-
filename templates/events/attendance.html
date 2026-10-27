@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}Attendance · {{ event.title }} · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+{% url 'events:detail' event.pk as back %}
+{% include "partials/_page_header.html" with title="Attendance" subtitle=event.title back_url=back back_label="Event" %}
+
+<div class="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+  {% if event.registration_required %}{% include "partials/_stat.html" with label="Registered" value=summary.event.registered %}{% endif %}
+  {% include "partials/_stat.html" with label="Present" value=summary.event.present %}
+  {% include "partials/_stat.html" with label="Late" value=summary.event.late %}
+  {% if event.registration_required %}{% include "partials/_stat.html" with label="Attendance rate" value=summary.rate|percent %}{% endif %}
+</div>
+
+<form method="get" class="mb-3 flex flex-wrap items-end gap-3">
+  <div class="min-w-48 flex-1"><label for="q" class="field-label">Find a member to mark</label><input id="q" name="q" value="{{ search }}" class="field-input" placeholder="Name, email or student number"></div>
+  <button class="btn btn-secondary">Search</button>{% if search %}<a href="?" class="btn btn-secondary">Clear</a>{% endif %}
+</form>
+<p class="mb-2 text-sm text-slate-600">{% if search %}Members matching “{{ search }}”.{% elif event.registration_required %}Everyone with a place.{% else %}Members marked so far. Search to mark someone else.{% endif %}</p>
+
+<div class="card overflow-x-auto">
+  <table class="table-base">
+    <thead><tr><th>Member</th><th>Level</th><th>Attendance</th></tr></thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for row in rows %}
+      <tr><td><span class="font-medium">{{ row.membership.user.profile.full_name|default:row.membership.user.email }}</span><span class="block text-xs text-slate-500">{{ row.membership.user.profile.student_number|default:"" }}</span></td>
+        <td>{{ row.membership.level_code|default:"—" }}</td>
+        <td id="att-{{ row.membership.pk }}">{% include "events/partials/attendance_cell.html" %}</td></tr>
+      {% empty %}<tr><td colspan="3" class="py-10 text-center text-slate-500">Nobody to show.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% include "partials/_pagination.html" %}
+</div>
+{% endblock %}

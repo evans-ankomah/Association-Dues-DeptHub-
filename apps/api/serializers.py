@@ -4,6 +4,8 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.communications.models import Announcement
+from apps.events.models import Event, EventRegistration
+from apps.events.services import places_left
 from apps.finance.models import DuesAssessment, DuesType, Payment, Receipt
 from apps.memberships.models import DepartmentMembership
 
@@ -182,6 +184,42 @@ class AnnouncementSerializer(serializers.ModelSerializer):
     class Meta:
         model = Announcement
         fields = ["id", "title", "body", "priority", "audience_type", "published_at", "expires_at"]
+
+
+class EventSerializer(serializers.ModelSerializer):
+    places_left = serializers.SerializerMethodField()
+    my_registration = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Event
+        fields = [
+            "id",
+            "title",
+            "description",
+            "event_type",
+            "venue_text",
+            "starts_at",
+            "ends_at",
+            "registration_required",
+            "capacity",
+            "places_left",
+            "event_status",
+            "my_registration",
+        ]
+
+    def get_places_left(self, obj) -> int | None:
+        return places_left(obj)
+
+    def get_my_registration(self, obj) -> str | None:
+        return self.context.get("my_registrations", {}).get(obj.pk)
+
+
+class RegistrationSerializer(serializers.ModelSerializer):
+    event = serializers.UUIDField(source="event_id")
+
+    class Meta:
+        model = EventRegistration
+        fields = ["id", "event", "registration_status", "registered_at", "cancelled_at"]
 
 
 class SummarySerializer(serializers.Serializer):
