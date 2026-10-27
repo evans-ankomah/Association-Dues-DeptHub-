@@ -13,8 +13,11 @@ DEBUG = False
 ALLOWED_HOSTS = ["testserver", "localhost"]
 PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-STORAGES["staticfiles"] = {  # noqa: F405
-    "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+STORAGES = {
+    **STORAGES,  # noqa: F405
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    # Uploaded test documents stay in memory and never touch the disk.
+    "documents": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
 }
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True

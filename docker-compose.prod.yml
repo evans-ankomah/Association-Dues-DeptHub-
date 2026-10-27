@@ -4,6 +4,11 @@ x-app: &app
   build: .
   image: depthub:latest
   env_file: .env.prod
+  environment:
+    PRIVATE_MEDIA_ROOT: /app/private_media
+  volumes:
+    # Uploaded documents. Private: never mount this into the proxy or serve it.
+    - private_media:/app/private_media
   depends_on:
     db:
       condition: service_healthy
@@ -50,3 +55,4 @@ services:
 
 volumes:
   pgdata:
+  private_media:

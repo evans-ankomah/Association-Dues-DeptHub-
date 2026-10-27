@@ -190,11 +190,15 @@ def meeting_detail(request, pk):
         pk=pk,
     )
     can_manage = svc.can_manage_meeting(request.user, request.department, meeting.committee)
+    from apps.documents.services import can_view as can_view_document  # documents depends on workspace
+
+    minutes = meeting.minutes_document
     return render(
         request,
         "workspace/meeting_detail.html",
         {
             "meeting": meeting,
+            "minutes": minutes if minutes and can_view_document(request.user, minutes) else None,
             "tasks": svc.visible_tasks(request.user, request.department)
             .filter(meeting=meeting)
             .select_related("assigned_to_user__profile"),
@@ -220,8 +224,16 @@ def meeting_form(request, pk=None):
         meeting = Meeting(department=department)
         if request.GET.get("committee"):
             meeting.committee = committees.filter(pk=request.GET["committee"]).first()
+    from apps.documents.services import visible_documents  # documents depends on workspace
+
     form = MeetingForm(
-        request.POST or None, instance=meeting, committees=committees, allow_executive=can_manage_all
+        request.POST or None,
+        instance=meeting,
+        committees=committees,
+        allow_executive=can_manage_all,
+        minutes_documents=visible_documents(request.user, department).filter(
+            category="minutes", next_versions__isnull=True
+        ),
     )
     if request.method == "POST" and form.is_valid():
         meeting = form.save(commit=False)

@@ -86,8 +86,9 @@ class Meeting(TimeStampedModel):
     scheduled_at = models.DateTimeField()
     location_text = models.CharField(max_length=220, null=True, blank=True)
     meeting_status = models.CharField(max_length=20, choices=Status, default=Status.SCHEDULED)
-    # Becomes a foreign key to documents when that module is added.
-    minutes_document_id = models.UUIDField(null=True, blank=True)
+    minutes_document = models.ForeignKey(
+        "documents.Document", on_delete=models.PROTECT, null=True, blank=True, related_name="minutes_for"
+    )
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="+")
     # Not in the workbook: short written minutes / agenda notes until a minutes document exists.
     notes = models.TextField(null=True, blank=True)

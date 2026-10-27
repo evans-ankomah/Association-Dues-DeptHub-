@@ -43,3 +43,6 @@ Thumbs.db
 # Generated sample data (rebuild with: python seed/generate_umat.py)
 seed/output/
 static/vendor/
+
+# Private document storage (never served directly)
+private_media/

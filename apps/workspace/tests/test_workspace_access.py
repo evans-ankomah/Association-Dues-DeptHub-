@@ -16,7 +16,13 @@ def test_plain_member_without_seat_or_task_sees_no_workspace(make_member, login)
     client = login(make_member())
     for path in ("/workspace/tasks/", "/workspace/committees/", "/workspace/meetings/"):
         assert client.get(path).status_code == 403
-    assert "Workspace" not in [s["title"] for s in client.get("/").context["nav_sections"]]
+    labels = nav_labels(client)
+    assert not {"Tasks", "Committees", "Meetings"} & labels
+    assert "Documents" in labels  # every member can read approved documents
+
+
+def nav_labels(client):
+    return {item["label"] for section in client.get("/").context["nav_sections"] for item in section["items"]}
 
 
 def test_committee_member_sees_own_committee_only(
@@ -31,7 +37,7 @@ def test_committee_member_sees_own_committee_only(
     assert client.get(f"/workspace/committees/{committee.pk}/").status_code == 200
     assert client.get(f"/workspace/committees/{other.pk}/").status_code == 404
     assert [r["committee"] for r in client.get("/workspace/committees/").context["rows"]] == [committee]
-    assert "Workspace" in [s["title"] for s in client.get("/").context["nav_sections"]]
+    assert {"Tasks", "Committees", "Meetings"} <= nav_labels(client)
 
 
 def test_ex_member_loses_access(committee, chair, make_member, login):

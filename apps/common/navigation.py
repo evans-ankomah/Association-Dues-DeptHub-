@@ -87,6 +87,7 @@ NAV_SECTIONS: list[tuple[str, list[NavItem]]] = [
             NavItem("Tasks", "workspace:tasks", ("committees.manage",), visible_if="workspace"),
             NavItem("Committees", "workspace:committees", ("committees.manage",), visible_if="workspace"),
             NavItem("Meetings", "workspace:meetings", ("committees.manage",), visible_if="workspace"),
+            NavItem("Documents", "documents:list"),
         ],
     ),
     ("Members", [NavItem("Roster", "members:roster", ("members.roster.view", "members.roster.edit"))]),

@@ -63,6 +63,8 @@ BADGE_STYLES = {
     "held": "bg-brand-100 text-brand-800",
     "inactive": "bg-slate-200 text-slate-600",
     "ended": "bg-slate-200 text-slate-600",
+    # documents
+    "pending_review": "bg-amber-100 text-amber-800",
 }
 
 LABELS = {

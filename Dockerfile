@@ -31,6 +31,9 @@ COPY --from=assets --chown=depthub:depthub /build/static/vendor static/vendor
 RUN SECRET_KEY=build-only ALLOWED_HOSTS=localhost DATABASE_URL=postgres://x:x@localhost/x \
     python manage.py collectstatic --noinput
 
+# Private document storage (mounted as a volume in production; owned by the app user).
+RUN mkdir -p /app/private_media && chown depthub:depthub /app/private_media && chmod 750 /app/private_media
+
 USER depthub
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s \
