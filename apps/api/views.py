@@ -3,6 +3,7 @@
 from django.core.exceptions import PermissionDenied as DjangoPermissionDenied
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -11,14 +12,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.access.services import accessible_departments, has_any_perm, permission_codes, role_codes
+from apps.common.errors import BusinessError
 from apps.common.navigation import FINANCE_VIEWERS
 from apps.communications.models import Announcement
 from apps.communications.services import visible_announcements
+from apps.events import services as event_service
+from apps.events.models import Event, EventRegistration
 from apps.finance.models import DuesAssessment, DuesType, Payment, Receipt
 from apps.finance.services import dues as dues_service
 from apps.finance.services import payments as pay_service
 from apps.finance.services.balances import with_balances
-from apps.finance.services.errors import FinanceError
 from apps.memberships.models import DepartmentMembership
 from apps.memberships.views import outstanding_subquery
 from apps.reporting import services as reporting
@@ -39,7 +42,7 @@ def _business(callable_, *args, **kwargs):
     """Run a service call and translate its errors to HTTP 400/403."""
     try:
         return callable_(*args, **kwargs)
-    except FinanceError as exc:
+    except BusinessError as exc:
         raise ValidationError({"detail": str(exc)}) from exc
     except DjangoPermissionDenied as exc:
         raise PermissionDenied() from exc
@@ -248,6 +251,64 @@ class AnnouncementViewSet(viewsets.ReadOnlyModelViewSet):
         if getattr(self, "swagger_fake_view", False):  # schema generation has no department
             return Announcement.objects.none()
         return visible_announcements(self.request.user, _department(self.request)).order_by("-published_at")
+
+
+class EventViewSet(viewsets.ReadOnlyModelViewSet):
+    """Events you can see: published, completed and cancelled ones; organisers also see drafts.
+
+    `?when=upcoming|past` filters by date. `my_registration` is your own registration status.
+    """
+
+    serializer_class = s.EventSerializer
+    permission_classes = [HasDeptPermission]
+    required_perms = {
+        "register": ("events.register",),
+        "cancel_registration": ("events.register",),
+        "*": ("events.register", "events.manage"),
+    }
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):  # schema generation has no department
+            return Event.objects.none()
+        qs = event_service.visible_events(self.request.user, _department(self.request))
+        when = self.request.query_params.get("when")
+        now = timezone.now()
+        if when == "upcoming":
+            qs = qs.filter(ends_at__gte=now).order_by("starts_at")
+        elif when == "past":
+            qs = qs.filter(ends_at__lt=now).order_by("-starts_at")
+        else:
+            qs = qs.order_by("-starts_at")
+        return qs
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        if not getattr(self, "swagger_fake_view", False) and self.request.user.is_authenticated:
+            context["my_registrations"] = dict(
+                EventRegistration.objects.filter(
+                    department_membership__user=self.request.user,
+                    event__department=_department(self.request),
+                ).values_list("event_id", "registration_status")
+            )
+        return context
+
+    @extend_schema(request=None, responses={201: s.RegistrationSerializer})
+    @action(detail=True, methods=["post"])
+    def register(self, request, pk=None):
+        registration = _business(event_service.register, self.get_object(), actor=request.user)
+        return Response(s.RegistrationSerializer(registration).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(request=None, responses=s.RegistrationSerializer)
+    @action(detail=True, methods=["post"], url_path="cancel-registration")
+    def cancel_registration(self, request, pk=None):
+        event = self.get_object()
+        registration = EventRegistration.objects.filter(
+            event=event, department_membership__user=request.user
+        ).first()
+        if registration is None:
+            raise ValidationError({"detail": "You aren't registered for this event."})
+        registration = _business(event_service.cancel_registration, registration, actor=request.user)
+        return Response(s.RegistrationSerializer(registration).data)
 
 
 class FinanceSummaryView(APIView):

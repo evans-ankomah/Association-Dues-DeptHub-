@@ -39,6 +39,7 @@ LOCAL_APPS = [
     "apps.audit",
     "apps.finance",
     "apps.communications",
+    "apps.events",
     "apps.reporting",
     "apps.api",
 ]

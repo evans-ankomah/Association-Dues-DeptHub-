@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}Events · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div><h1 class="text-2xl font-semibold">Events</h1><p class="mt-1 text-sm text-slate-600">{{ current_department }}</p></div>
+  {% if can_manage %}<a href="{% url 'events:create' %}" class="btn btn-primary">New event</a>{% endif %}
+</div>
+
+{% if awaiting_approval %}
+<div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+  <p class="font-medium">Waiting for approval</p>
+  <ul class="mt-1 space-y-1">{% for e in awaiting_approval %}<li><a href="{% url 'events:detail' e.pk %}" class="hover:underline">{{ e.title }} · {{ e.starts_at|date:"j M Y" }}</a></li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<nav class="mb-4 flex flex-wrap gap-2 text-sm" aria-label="Filter events">
+  <a href="?when=upcoming" class="rounded-full px-3 py-1 {% if when == 'upcoming' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Upcoming</a>
+  <a href="?when=past" class="rounded-full px-3 py-1 {% if when == 'past' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">Past</a>
+  <a href="?when=all" class="rounded-full px-3 py-1 {% if when == 'all' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">All</a>
+  {% if statuses %}
+  <span class="mx-1 border-l border-slate-200"></span>
+  {% for v, l in statuses %}<a href="?when=all&status={{ v }}" class="rounded-full px-3 py-1 {% if status == v %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-200{% endif %}">{{ l }}</a>{% endfor %}
+  {% endif %}
+</nav>
+
+<div class="grid gap-3 md:grid-cols-2">
+  {% for e in page %}
+  <article class="card flex flex-col gap-2 p-4 {% if e.event_status == 'cancelled' %}opacity-75{% endif %}">
+    <div class="flex flex-wrap items-center gap-2">
+      {% if e.event_status != "published" %}{% status_badge e.event_status %}{% endif %}
+      {% if e.my_registration %}{% status_badge e.my_registration %}{% endif %}
+      <span class="text-xs text-slate-500">{{ e.get_event_type_display }}</span>
+    </div>
+    <a href="{% url 'events:detail' e.pk %}" class="text-base font-semibold text-slate-900 hover:text-brand-700 hover:underline">{{ e.title }}</a>
+    <p class="text-sm text-slate-600">{{ e.starts_at|date:"D j M Y, H:i" }}{% if e.venue_text %} · {{ e.venue_text }}{% endif %}</p>
+    {% if e.registration_required %}<p class="text-xs text-slate-500">Registration required{% if e.capacity %} · {{ e.capacity }} places{% endif %}</p>{% endif %}
+  </article>
+  {% empty %}
+  <div class="card p-10 text-center text-sm text-slate-500 md:col-span-2">No events here.</div>
+  {% endfor %}
+</div>
+<div class="mt-4">{% include "partials/_pagination.html" %}</div>
+{% endblock %}

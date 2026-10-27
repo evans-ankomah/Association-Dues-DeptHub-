@@ -1,0 +1,7 @@
+<form method="post" action="{% url 'events:mark_attendance' event.pk %}" class="flex flex-wrap items-center gap-1" hx-post="{% url 'events:mark_attendance' event.pk %}" hx-target="closest td" hx-swap="innerHTML">
+  {% csrf_token %}<input type="hidden" name="membership" value="{{ row.membership.pk }}">
+  <button name="status" value="present" class="rounded-full px-2.5 py-1 text-xs font-medium {% if row.status == 'present' %}bg-brand-600 text-white{% else %}bg-white ring-1 ring-slate-300 hover:bg-slate-50{% endif %}" aria-pressed="{% if row.status == 'present' %}true{% else %}false{% endif %}">Present</button>
+  <button name="status" value="late" class="rounded-full px-2.5 py-1 text-xs font-medium {% if row.status == 'late' %}bg-amber-600 text-white{% else %}bg-white ring-1 ring-slate-300 hover:bg-slate-50{% endif %}" aria-pressed="{% if row.status == 'late' %}true{% else %}false{% endif %}">Late</button>
+  <button name="status" value="absent" class="rounded-full px-2.5 py-1 text-xs font-medium {% if row.status == 'absent' %}bg-red-600 text-white{% else %}bg-white ring-1 ring-slate-300 hover:bg-slate-50{% endif %}" aria-pressed="{% if row.status == 'absent' %}true{% else %}false{% endif %}">Absent</button>
+  <button name="status" value="excused" class="rounded-full px-2.5 py-1 text-xs font-medium {% if row.status == 'excused' %}bg-slate-600 text-white{% else %}bg-white ring-1 ring-slate-300 hover:bg-slate-50{% endif %}" aria-pressed="{% if row.status == 'excused' %}true{% else %}false{% endif %}">Excused</button>
+</form>

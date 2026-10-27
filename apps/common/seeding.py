@@ -114,4 +114,18 @@ def load(seed_dir: Path, password: str, batch_size: int = 1000) -> LoadReport:
             objects.append(model(**values))
         model.objects.bulk_create(objects, batch_size=batch_size)
         report.loaded[table] = len(objects)
+    _analyze(report.loaded)
     return report
+
+
+def _analyze(tables):
+    """Refresh planner statistics after the bulk load.
+
+    Without them PostgreSQL may believe the tables are still empty and pick nested-loop plans
+    that make queries such as v_dues_balances crawl.
+    """
+    if not tables:
+        return
+    quoted = ", ".join(connection.ops.quote_name(t) for t in tables)
+    with connection.cursor() as cursor:
+        cursor.execute(f"ANALYZE {quoted}")  # noqa: S608 - names come from model metadata

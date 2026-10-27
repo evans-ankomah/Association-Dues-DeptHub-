@@ -40,12 +40,23 @@ BADGE_STYLES = {
     "withdrawn": "bg-slate-200 text-slate-600",
     "recorded": "bg-slate-100 text-slate-700",
     "returned": "bg-amber-100 text-amber-800",
+    # events
+    "completed": "bg-slate-200 text-slate-700",
+    "registered": "bg-brand-100 text-brand-800",
+    "waitlisted": "bg-amber-100 text-amber-800",
+    "attended": "bg-brand-100 text-brand-800",
+    "no_show": "bg-slate-200 text-slate-600",
+    "present": "bg-brand-100 text-brand-800",
+    "late": "bg-amber-100 text-amber-800",
+    "absent": "bg-red-100 text-red-800",
+    "excused": "bg-slate-100 text-slate-700",
 }
 
 LABELS = {
     "partial": "Part paid",
     "partially_refunded": "Part refunded",
     "pending_approval": "Awaiting approval",
+    "no_show": "No show",
 }
 
 

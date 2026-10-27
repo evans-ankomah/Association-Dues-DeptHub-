@@ -25,6 +25,8 @@ def test_seed_loads_and_seeded_staff_have_their_roles():
     for table, count in report.loaded.items():
         assert count == manifest["row_counts"][table], table
     assert not report.dropped_columns
+    for table in ("events", "event_registrations", "event_attendance"):
+        assert report.loaded[table] == manifest["row_counts"][table], table
     assert Role.objects.count() == 11
 
     cse = Department.objects.get(code="CSE")

@@ -1,6 +1,6 @@
 # DeptHub — Association Dues Collection
 
-A dues and membership platform for university departments: member rosters, academic sessions, dues assessments, online and offline payments, receipts, and finance reporting.
+A dues and membership platform for university departments: member rosters, academic sessions, dues assessments, online and offline payments, receipts, and finance reporting, plus department operations such as events and attendance.
 
 Built as a Django modular monolith with server-rendered pages (HTMX, Alpine.js, Tailwind CSS), PostgreSQL, and Celery/Redis for background jobs.
 

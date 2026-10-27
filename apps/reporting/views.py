@@ -10,6 +10,8 @@ from apps.access.services import has_any_perm, has_perm
 from apps.audit.services import record
 from apps.common.navigation import FINANCE_VIEWERS
 from apps.communications.services import visible_announcements
+from apps.events.models import Event
+from apps.events.services import visible_events
 from apps.finance.models import DuesAssessment, DuesBalance, Payment
 from apps.finance.services.balances import with_balances
 from apps.finance.services.spending import paid_expenses
@@ -51,6 +53,12 @@ def home(request):
         }
     if has_any_perm(request.user, ("announcements.view", "announcements.publish"), department):
         context["notices"] = visible_announcements(request.user, department).order_by("-published_at")[:3]
+    if has_any_perm(request.user, ("events.register", "events.manage"), department):
+        context["upcoming_events"] = (
+            visible_events(request.user, department)
+            .filter(event_status=Event.Status.PUBLISHED, ends_at__gte=timezone.now())
+            .order_by("starts_at")[:3]
+        )
 
     if has_any_perm(request.user, FINANCE_VIEWERS, department) and request.academic_session:
         session = request.academic_session
