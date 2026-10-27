@@ -50,6 +50,12 @@ BADGE_STYLES = {
     "late": "bg-amber-100 text-amber-800",
     "absent": "bg-red-100 text-red-800",
     "excused": "bg-slate-100 text-slate-700",
+    # service requests
+    "triaged": "bg-sky-100 text-sky-800",
+    "in_progress": "bg-sky-100 text-sky-800",
+    "waiting": "bg-amber-100 text-amber-800",
+    "resolved": "bg-brand-100 text-brand-800",
+    "high": "bg-amber-100 text-amber-800",
 }
 
 LABELS = {

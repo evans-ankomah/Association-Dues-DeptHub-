@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load money %}
+{% block title %}My requests · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div><h1 class="text-2xl font-semibold">My requests</h1><p class="mt-1 text-sm text-slate-600">Ask the department for a letter, facility access, or to fix something, and follow progress here.</p></div>
+  <div class="flex gap-2">{% if can_manage %}<a href="{% url 'service_requests:queue' %}" class="btn btn-secondary">Request queue</a>{% endif %}{% if can_submit %}<a href="{% url 'service_requests:submit' %}" class="btn btn-primary">New request</a>{% endif %}</div>
+</div>
+<div class="card overflow-x-auto">
+  <table class="table-base">
+    <thead><tr><th>Request</th><th>Type</th><th>Submitted</th><th>Status</th></tr></thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for sr in page %}
+      <tr class="hover:bg-slate-50">
+        <td><a href="{% url 'service_requests:detail' sr.pk %}" class="font-medium text-brand-700 hover:underline">{{ sr.title }}</a><p class="text-xs text-slate-500">{{ sr.reference }}</p></td>
+        <td>{{ sr.type_label }}</td>
+        <td>{{ sr.submitted_at|date:"j M Y" }}</td>
+        <td>{% status_badge sr.request_status sr.get_request_status_display %}</td>
+      </tr>
+      {% empty %}<tr><td colspan="4" class="py-10 text-center text-slate-500">You haven't submitted any requests.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  {% include "partials/_pagination.html" %}
+</div>
+{% endblock %}

@@ -62,6 +62,13 @@ NAV_SECTIONS: list[tuple[str, list[NavItem]]] = [
         ],
     ),
     ("Activities", [NavItem("Events", "events:list", ("events.register", "events.manage"))]),
+    (
+        "Services",
+        [
+            NavItem("My requests", "service_requests:mine", ("requests.create",)),
+            NavItem("Request queue", "service_requests:queue", ("requests.manage",)),
+        ],
+    ),
     ("Members", [NavItem("Roster", "members:roster", ("members.roster.view", "members.roster.edit"))]),
     ("Account", [NavItem("Profile", "accounts:profile")]),
     ("Administration", [NavItem("Platform admin", "admin:index", platform_admin_only=True)]),

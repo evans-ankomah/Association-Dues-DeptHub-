@@ -8,6 +8,8 @@ from apps.events.models import Event, EventRegistration
 from apps.events.services import places_left
 from apps.finance.models import DuesAssessment, DuesType, Payment, Receipt
 from apps.memberships.models import DepartmentMembership
+from apps.service_requests.models import REQUEST_TYPES, ServiceRequest, ServiceRequestComment
+from apps.service_requests.services import visible_comments
 
 MONEY = {"max_digits": 14, "decimal_places": 2, "coerce_to_string": True}
 
@@ -220,6 +222,55 @@ class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventRegistration
         fields = ["id", "event", "registration_status", "registered_at", "cancelled_at"]
+
+
+class ServiceRequestCommentSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source="author_user.display_name")
+
+    class Meta:
+        model = ServiceRequestComment
+        fields = ["id", "author", "body", "visibility", "created_at"]
+
+
+class ServiceRequestSerializer(serializers.ModelSerializer):
+    reference = serializers.CharField(read_only=True)
+    type_label = serializers.CharField(read_only=True)
+    assigned_to = serializers.CharField(source="assigned_to_user.display_name", default=None)
+    comments = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ServiceRequest
+        fields = [
+            "id",
+            "reference",
+            "request_type",
+            "type_label",
+            "title",
+            "description",
+            "priority",
+            "request_status",
+            "visibility_level",
+            "assigned_to",
+            "submitted_at",
+            "due_at",
+            "resolved_at",
+            "resolution_summary",
+            "comments",
+        ]
+
+    @extend_schema_field(ServiceRequestCommentSerializer(many=True))
+    def get_comments(self, obj):
+        request = self.context.get("request")
+        if request is None:
+            return []
+        return ServiceRequestCommentSerializer(visible_comments(request.user, obj), many=True).data
+
+
+class ServiceRequestCreateSerializer(serializers.Serializer):
+    request_type = serializers.ChoiceField(choices=[(t.code, t.label) for t in REQUEST_TYPES])
+    title = serializers.CharField(max_length=180)
+    description = serializers.CharField(max_length=4000)
+    priority = serializers.ChoiceField(choices=["low", "normal", "high"], required=False, default="normal")
 
 
 class SummarySerializer(serializers.Serializer):

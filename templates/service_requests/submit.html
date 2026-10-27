@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}New request · {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+{% url 'service_requests:mine' as back %}
+{% include "partials/_page_header.html" with title="New request" back_url=back back_label="My requests" %}
+<form method="post" class="card max-w-2xl space-y-4 p-6" novalidate>
+  {% csrf_token %}
+  {% include "partials/_form_errors.html" %}
+  {% include "partials/_field.html" with field=form.request_type %}
+  <p class="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">Results and academic-record queries are <strong>restricted</strong>: only you and the HoD or faculty adviser can see them. Other requests are handled by department officers.</p>
+  {% include "partials/_field.html" with field=form.title %}
+  {% include "partials/_field.html" with field=form.description %}
+  {% include "partials/_field.html" with field=form.priority %}
+  <p class="text-xs text-slate-500">For personal welfare concerns, please speak to the faculty adviser directly. This form isn't confidential enough for them.</p>
+  <div class="flex flex-wrap gap-3"><button class="btn btn-primary">Submit request</button><a href="{{ back }}" class="btn btn-secondary">Cancel</a></div>
+</form>
+{% endblock %}
